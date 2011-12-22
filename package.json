@@ -1,0 +1,22 @@
+{
+  "name":        "redminejs",
+  "version":     "0.1",
+  "author":      "rob hurring",
+  "keywords":    "hubot plugin scripts campfire bot robot redmine",
+  "description": "Basic redmine API for hubot or whatever",
+  "main":        "./src/index",
+
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/robhurring/redminejs.git"
+  },
+
+  "dependencies": {
+  },
+
+  "directories":  {
+    "lib": "./src"
+  },
+  
+  "engine": "node >= 0.4.1"
+}
