@@ -8,7 +8,7 @@ user (preferably one with enough access to modify tickets), add the following to
     heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
     heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
   
-![screenshot](https://github.com/robhurring/redminejs/blob/master/ss.png?raw=true)
+![screenshot](https://github.com/robhurring/hubot-redmine/blob/master/ss.png?raw=true)
 
 ## Showing ticket details
 
