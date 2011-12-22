@@ -4,6 +4,7 @@
 #   heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
 #
 # (redmine|show) me <ticket-id>    - Show the ticket status
+# show my|user's tickets    - Show your tickets or another user's tickets
 # assign <ticket-id> to <user-first-name>   - Assign the ticket to the user (searches login or firstname)
 # update <ticket-id> with "<note>"  - Adds a note to the ticket
 
