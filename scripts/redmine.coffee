@@ -9,7 +9,7 @@
 # update <ticket-id> with "<note>"  - Adds a note to the ticket
 
 module.exports = (robot) ->
-  redmine = new Redmine
+  redmine = new Redmine(process.env.HUBOT_REDMINE_BASE_URL, process.env.HUBOT_REDMINE_TOKEN)
   
   # Robot show <my|user's> [redmine] tickets
   robot.respond /show (?:my|(\w+\'s)) (?:redmine )?tickets/, (msg) ->
@@ -163,9 +163,14 @@ URL = require('url')
 QUERY = require('querystring')
 
 class Redmine
-  @url = process.env.HUBOT_REDMINE_BASE_URL
-  @token = process.env.HUBOT_REDMINE_TOKEN
   @logger = console
+  
+  constructor: (url, token) ->
+    @url = url
+    @token = token
+  
+  log: (message, severity = null) ->
+    Redmine.logger.log message if Redmine.logger?
   
   Users: (params, callback) ->
     @get "/users.json", params, callback
@@ -205,9 +210,9 @@ class Redmine
   request: (method, path, body, callback) ->
     headers =
       "Content-Type": "application/json"
-      "X-Redmine-API-Key": Redmine.token
+      "X-Redmine-API-Key": @token
     
-    endpoint = URL.parse(Redmine.url)  
+    endpoint = URL.parse(@url)  
     
     options =
       "host"   : endpoint.hostname
