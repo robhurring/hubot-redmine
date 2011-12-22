@@ -15,6 +15,12 @@ user (preferably one with enough access to modify tickets), add the following to
 * Hubot show me [ticket]
 * Hubot redmine me [ticket]
 
+## Showing my tickets (or another user's)
+
+* Hubot show my tickets
+* Hubot show [user]'s tickets
+** [user] will attempt to match on redmine firstname or login
+
 ## Re-Assigning tickets
 
 * Hubot assign [ticket] to [user]
