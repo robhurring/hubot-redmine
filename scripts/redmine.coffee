@@ -13,9 +13,8 @@ module.exports = (robot) ->
   robot.respond /update (?:ticket )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/, (msg) ->
     [id, note] = msg.match[1..2]
     
-    attributes = {
-      notes: "#{msg.message.user.name}: #{note}"
-    }
+    attributes =
+      "notes": "#{msg.message.user.name}: #{note}"
     
     redmine.Issue(id).update attributes, (err, data) ->
       if err?
