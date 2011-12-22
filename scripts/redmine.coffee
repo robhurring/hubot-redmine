@@ -24,7 +24,7 @@ module.exports = (robot) ->
 
   # Robot assign <ticket> to <user>
   robot.respond /assign (?:ticket)?(?: #)?(\d+) to (\w+)/, (msg) ->
-    [id, user] = msg.match[1..2]
+    [id, userName] = msg.match[1..2]
     
     redmine.Users name:userName, (err, data) ->
       unless data?
