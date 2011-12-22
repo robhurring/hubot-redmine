@@ -108,13 +108,40 @@ module.exports = (robot) ->
       for journal in issue.journals
         do (journal) ->
           if journal.notes? and journal.notes != ""
-            _.push "#{journal.user.name}:"
+            date = formatDate journal.created_on, 'mm/dd/yyyy (hh:ii ap)'
+            _.push "#{journal.user.name} on #{date}:"
             _.push "    #{journal.notes}\n"
       
       msg.reply _.join "\n"
 
 # Helpers
 
+formatDate = (dateStamp, fmt = 'mm/dd/yyyy at hh:ii ap') ->
+  d = new Date(dateStamp)
+  
+  # split up the date
+  [m,d,y,h,i,s,ap] = 
+    [d.getMonth() + 1, d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes(), d.getSeconds(), 'AM']
+  
+  # leadig-0 minutes
+  i = "0#{i}" if i < 10
+
+  # adjust hours
+  if h > 12
+    h = h - 12 
+    ap = "PM"
+  
+  # ghetto fab!
+  fmt
+    .replace(/mm/, m)
+    .replace(/dd/, d)
+    .replace(/yyyy/, y)
+    .replace(/hh/, h)
+    .replace(/ii/, i)
+    .replace(/ap/, ap)
+  
+
+# try to find the user matching on login or firstname
 resolveUsers = (name, data) ->
     name = name.toLowerCase();
 
@@ -128,7 +155,7 @@ resolveUsers = (name, data) ->
     
     # give up
     data
-  
+
 # Redmine API
 
 HTTP = require('http')
