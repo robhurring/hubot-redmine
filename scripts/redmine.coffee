@@ -1,4 +1,7 @@
-# Looks up redmine tickets
+# Basic redmine API mapping
+# 
+#   heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
+#   heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
 #
 # (redmine|show) me <ticket-id>    - Show the ticket status
 # assign <ticket-id> to <user-first-name>   - Assign the ticket to the user (searches login or firstname)
