@@ -27,7 +27,7 @@ module.exports = (robot) ->
     [id, userName] = msg.match[1..2]
     
     redmine.Users name:userName, (err, data) ->
-      unless data?
+      unless data.total_count > 0
         msg.reply "Couldn't find any users with the name \"#{userName}\""
         return false
       
