@@ -85,8 +85,11 @@ module.exports = (robot) ->
   # Robot redmine me <ticket>
   robot.respond /(?:redmine|show)(?: me)? (?:#)?(\d+)/, (msg) ->
     id = msg.match[1]
-
-    redmine.Issue(id).show (err, data) ->
+    
+    params = 
+      "include": "journals"
+    
+    redmine.Issue(id).show params, (err, data) ->
       unless data?
         msg.send "Issue ##{id} couldn't be found."
         return false
@@ -94,10 +97,19 @@ module.exports = (robot) ->
       issue = data.issue
       
       _ = []
-      _.push "\n[#{issue.priority.name}] #{issue.tracker.name} ##{id} (#{issue.status.name})"
+      _.push "\n[#{issue.project.name} - #{issue.priority.name}] #{issue.tracker.name} ##{id} (#{issue.status.name})"
       _.push "Assigned: #{issue.assigned_to.name} (from #{issue.author.name})"
       _.push "Subject: #{issue.subject}"
       _.push "\n#{issue.description}"
+
+      # journals
+      _.push "\n" + Array(50).join('-') + "\n"
+      for journal in issue.journals
+        do (journal) ->
+          if journal.notes? and journal.notes != ""
+            _.push "#{journal.user.name}:"
+            _.push "    #{journal.notes}\n"
+      
       msg.reply _.join "\n"
 
 # Helpers
@@ -145,8 +157,8 @@ class Redmine
   Issue: (id) ->
     self = @
 
-    show: (callback) -> 
-      self.get "/issues/#{id}.json", {}, callback
+    show: (params, callback) -> 
+      self.get "/issues/#{id}.json", params, callback
       
     update: (attributes, callback) ->
       self.put "/issues/#{id}.json", {issue: attributes}, callback
