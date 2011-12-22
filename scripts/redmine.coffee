@@ -171,10 +171,9 @@ class Redmine
     @get "/users.json", params, callback
 
   User: (id) ->
-    self = @
     
-    show: (callback) ->
-      self.get "/users/#{id}.json", {}, callback
+    show: (callback) =>
+      @get "/users/#{id}.json", {}, callback
   
   Projects: (params, callback) ->
     @get "/projects.json", params, callback
@@ -183,13 +182,12 @@ class Redmine
     @get "/issues.json", params, callback
   
   Issue: (id) ->
-    self = @
 
-    show: (params, callback) -> 
-      self.get "/issues/#{id}.json", params, callback
+    show: (params, callback) =>
+      @get "/issues/#{id}.json", params, callback
       
-    update: (attributes, callback) ->
-      self.put "/issues/#{id}.json", {issue: attributes}, callback
+    update: (attributes, callback) =>
+      @put "/issues/#{id}.json", {issue: attributes}, callback
   
 # private
 
@@ -217,7 +215,7 @@ class Redmine
       "method" : method
       "headers": headers
         
-    if method is "POST" || method is "PUT"
+    if method is "POST" or method is "PUT"
       if typeof(body) isnt "string"
         body = JSON.stringify body
 
@@ -246,7 +244,7 @@ class Redmine
         Redmine.logger.log "Redmine response error: #{err}"
         callback err, null
 
-    if method is "POST" || method is "PUT"
+    if method is "POST" or method is "PUT"
       request.end(body, 'binary')
     else
       request.end()
