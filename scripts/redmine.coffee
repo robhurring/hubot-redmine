@@ -242,11 +242,11 @@ class Redmine
           when 401
             throw new Error "401: Authentication failed."
           else
-            Redmine.logger.log "Code: #{response.statusCode}"
+            @log "Code: #{response.statusCode}"
             callback response.statusCode, null
 
       response.on "error", (err) ->
-        Redmine.logger.log "Redmine response error: #{err}"
+        @log "Redmine response error: #{err}"
         callback err, null
 
     if method is "POST" or method is "PUT"
@@ -255,5 +255,5 @@ class Redmine
       request.end()
 
     request.on "error", (err) ->
-      Redmine.logger.log "Redmine request error: #{err}"
+      @log "Redmine request error: #{err}"
       callback err, null
