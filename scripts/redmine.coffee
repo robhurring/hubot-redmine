@@ -104,7 +104,7 @@ module.exports = (robot) ->
       _.push "\n#{issue.description}"
 
       # journals
-      _.push "\n" + Array(50).join('-') + "\n"
+      _.push "\n" + Array(10).join('-') + '8<' + Array(40).join('-') + "\n"
       for journal in issue.journals
         do (journal) ->
           if journal.notes? and journal.notes != ""
