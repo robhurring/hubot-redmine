@@ -9,7 +9,48 @@
 
 module.exports = (robot) ->
   redmine = new Redmine
+  
+  # Robot show <my|user's> [redmine] tickets
+  robot.respond /show (?:my|(\w+\'s)) (?:redmine )?tickets/, (msg) ->
+    userMode = true
+    firstName = 
+      if msg.match[1]?
+        userMode = false
+        msg.match[1].replace(/\'.+/, '')
+      else
+        msg.message.user.name.split(/\s/)[0]
+        
+    redmine.Users name:firstName, (err,data) ->
+      unless data.total_count > 0
+        msg.reply "Couldn't find any users with the name \"#{firstName}\""
+        return false
+        
+      user = resolveUsers(firstName, data.users)[0]
+      
+      params = 
+        "assigned_to_id": user.id
+        "limit": 25,
+        "status_id": "open"
+        "sort": "priority:desc",
 
+      redmine.Issues params, (err, data) ->
+        if err?
+          msg.reply "Couldn't get a list of tickets for you!"
+        else
+          _ = []
+
+          if userMode
+            _.push "You have #{data.total_count} issue(s)."
+          else
+            _.push "#{user.firstname} has #{data.total_count} issue(s)."
+            
+          for issue in data.issues
+            do (issue) ->
+              _.push "\n[#{issue.tracker.name} - #{issue.priority.name} - #{issue.status.name}] ##{issue.id}: #{issue.subject}"
+          
+          msg.reply _.join "\n"
+  
+  # Robot update <ticket> with "<note>"
   robot.respond /update (?:ticket )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/, (msg) ->
     [id, note] = msg.match[1..2]
     
