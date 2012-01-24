@@ -1,4 +1,4 @@
-[[ Temporary storage here while I work on it ]]
+[[ This is now being maintained in my [hubot-scripts](https://github.com/robhurring/hubot-scripts/blob/master/src/scripts/redmine.coffee) fork, and was merged into the hubot-scripts core. I still love pull requests though :) ]]
 
 # Hubot Redmine
 
