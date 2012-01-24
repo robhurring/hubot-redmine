@@ -12,7 +12,7 @@ module.exports = (robot) ->
   redmine = new Redmine process.env.HUBOT_REDMINE_BASE_URL, process.env.HUBOT_REDMINE_TOKEN
   
   # Robot show <my|user's> [redmine] tickets
-  robot.respond /show (?:my|(\w+\'s)) (?:redmine )?tickets/, (msg) ->
+  robot.respond /show (?:my|(\w+\'s)) (?:redmine )?tickets/i, (msg) ->
     userMode = true
     firstName = 
       if msg.match[1]?
@@ -52,7 +52,7 @@ module.exports = (robot) ->
           msg.reply _.join "\n"
   
   # Robot update <ticket> with "<note>"
-  robot.respond /update (?:ticket )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/, (msg) ->
+  robot.respond /update (?:ticket )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/i, (msg) ->
     [id, note] = msg.match[1..2]
     
     attributes =
@@ -65,7 +65,7 @@ module.exports = (robot) ->
         msg.reply "Done! Updated ##{id} with \"#{note}\""
 
   # Robot assign <ticket> to <user>
-  robot.respond /assign (?:ticket)?(?: #)?(\d+) to (\w+)/, (msg) ->
+  robot.respond /assign (?:ticket)?(?: #)?(\d+) to (\w+)/i, (msg) ->
     [id, userName] = msg.match[1..2]
     
     redmine.Users name:userName, (err, data) ->
@@ -84,7 +84,7 @@ module.exports = (robot) ->
           msg.reply "Assigned ##{id} to #{user.firstname}."
 
   # Robot redmine me <ticket>
-  robot.respond /(?:redmine|show)(?: me)? (?:#)?(\d+)/, (msg) ->
+  robot.respond /(?:redmine|show)(?: me)? (?:#)?(\d+)/i, (msg) ->
     id = msg.match[1]
     
     params = 
