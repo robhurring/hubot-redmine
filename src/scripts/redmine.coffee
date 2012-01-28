@@ -297,22 +297,23 @@ class Redmine
   # Private: do a PUT request against the API
   put: (path, body, callback) ->
     @request "PUT", path, body, callback
-  
+
   # Private: Perform a request against the redmine REST API
   # from the campfire adapter :)
   request: (method, path, body, callback) ->
     headers =
       "Content-Type": "application/json"
       "X-Redmine-API-Key": @token
-    
-    endpoint = URL.parse(@url)  
-    
+
+    endpoint = URL.parse(@url)
+    pathname = endpoint.pathname.replace /^\/$/, ''
+
     options =
       "host"   : endpoint.hostname
-      "path"   : "#{endpoint.pathname}#{path}"
+      "path"   : "#{pathname}#{path}"
       "method" : method
       "headers": headers
-        
+
     if method in ["POST", "PUT"]
       if typeof(body) isnt "string"
         body = JSON.stringify body
