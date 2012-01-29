@@ -127,21 +127,23 @@ module.exports = (robot) ->
       else
         msg.reply "Done! Updated ##{id} with \"#{note}\""
 
-  # Robot add <issue> to "<project>" [traker <id>] with "<subject>"
-  robot.respond /add (?:issue )?(?:\s*to\s*)?(?:[-:,])?(?:"?([^"]+)"?)/i, (msg) ->
-    [id, note] = msg.match[1..2]
+  # Robot add issue to "<project>" [traker <id>] with "<subject>"
+  robot.respond /add (?:issue )?(?:\s*to\s*)?(?:"?([^"]+)"?)(?:\s*tracker\s*)(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
+    [project_id, tracker_id, subject] = msg.match[1..3]
 
     attributes =
-      "notes": "#{msg.message.user.name}: #{note}"
+      "project_id": "#{project_id}"
+      "subject": "#{subject}"
+      "tracker_id": "#{tracker_id}"
 
     redmine.Issue(id).update attributes, (err, data, status) ->
       unless data?
         if status == 404
-          msg.reply "Issue ##{id} doesn't exist."
+          msg.reply "Couldn't update this issue, #{status} :("
         else
           msg.reply "Couldn't update this issue, sorry :("
       else
-        msg.reply "Done! Updated ##{id} with \"#{note}\""
+        msg.reply "Done! Added issue #{data.id} with \"#{subject}\""
 
   # Robot assign <issue> to <user> ["note to add with the assignment]
   robot.respond /assign (?:issue )?(?:#)?(\d+) to (\w+)(?: "?([^"]+)"?)?/i, (msg) ->
