@@ -128,20 +128,22 @@ module.exports = (robot) ->
         msg.reply "Done! Updated ##{id} with \"#{note}\""
 
   # Robot add issue to "<project>" [traker <id>] with "<subject>"
-  robot.respond /add (?:issue )?(?:\s*to\s*)?(?:"?([^"]+)"?)(?:\s*tracker\s*)(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
+  robot.respond /add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
     [project_id, tracker_id, subject] = msg.match[1..3]
 
     attributes =
       "project_id": "#{project_id}"
       "subject": "#{subject}"
-      "tracker_id": "#{tracker_id}"
+    if tracker_id != undefined 
+      attributes = 
+        "project_id": "#{project_id}"
+        "subject": "#{subject}"
+        "tracker_id": "#{tracker_id}"
 
-    redmine.Issue(id).update attributes, (err, data, status) ->
+    redmine.Issue().add attributes, (err, data, status) ->
       unless data?
         if status == 404
           msg.reply "Couldn't update this issue, #{status} :("
-        else
-          msg.reply "Couldn't update this issue, sorry :("
       else
         msg.reply "Done! Added issue #{data.id} with \"#{subject}\""
 
@@ -299,7 +301,7 @@ class Redmine
       @put "/issues/#{id}.json", {issue: attributes}, callback
 
     add: (attributes, callback) =>
-      @put "/issues/#{id}.json", {issue: attributes}, callback
+      @post "/issues.json", {issue: attributes}, callback
 
   TimeEntry: (id = null) ->
 
