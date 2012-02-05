@@ -31,7 +31,7 @@ user (preferably one with enough access to modify tickets), add the following to
 
 ## Create tickets
 
-* Hubot add issue to "<project>" [traker <id>] with "<subject>"
-** [tracker <id>] is the number matching literal value Bug/Feature/...
+* Hubot add issue to "[project]" [traker id] with "[subject]"
+** [tracker id] is optional and represent the number matching literal value Bug/Feature/...
 
 ## More coming!
