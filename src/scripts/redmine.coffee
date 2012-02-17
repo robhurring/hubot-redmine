@@ -183,8 +183,8 @@ module.exports = (robot) ->
     params =
       "include": "journals"
 
-    redmine.Issue(id).show params, (err, data) ->
-      unless data?
+    redmine.Issue(id).show params, (err, data, status) ->
+      unless status == 200
         msg.reply "Issue ##{id} doesn't exist."
         return false
 
