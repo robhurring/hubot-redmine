@@ -1,5 +1,3 @@
-[[ This is now being maintained in my [hubot-scripts](https://github.com/robhurring/hubot-scripts/blob/master/src/scripts/redmine.coffee) fork, and was merged into the hubot-scripts core. I still love pull requests though :) ]]
-
 # Hubot Redmine
 
 Light mapping of the Redmine REST API that allows hubot access to some basic redmine tasks. Once you have a redmine
@@ -7,7 +5,7 @@ user (preferably one with enough access to modify tickets), add the following to
 
     heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
     heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
-  
+
 ![screenshot](https://github.com/robhurring/hubot-redmine/blob/master/ss.png?raw=true)
 
 ## Showing ticket details
