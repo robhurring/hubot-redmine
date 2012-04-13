@@ -142,7 +142,8 @@ module.exports = (robot) ->
     attributes =
       "project_id": "#{project_id}"
       "subject": "#{subject}"
-    if tracker_id != undefined
+
+    if tracker_id?
       attributes =
         "project_id": "#{project_id}"
         "subject": "#{subject}"
