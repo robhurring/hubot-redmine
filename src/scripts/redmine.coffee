@@ -142,8 +142,8 @@ module.exports = (robot) ->
     attributes =
       "project_id": "#{project_id}"
       "subject": "#{subject}"
-    if tracker_id != undefined 
-      attributes = 
+    if tracker_id != undefined
+      attributes =
         "project_id": "#{project_id}"
         "subject": "#{subject}"
         "tracker_id": "#{tracker_id}"
@@ -341,6 +341,7 @@ class Redmine
 
     options =
       "host"   : endpoint.hostname
+      "port"   : endpoint.port
       "path"   : "#{pathname}#{path}"
       "method" : method
       "headers": headers
