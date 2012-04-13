@@ -6,7 +6,7 @@ user (preferably one with enough access to modify tickets), add the following to
     heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
     heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
 
-    If using over SSL, add the following to your heroku config:
+If using over SSL, add the following to your heroku config:
 
     heroku config:add HUBOT_REDMINE_SSL=1
 
