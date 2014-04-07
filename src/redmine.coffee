@@ -265,6 +265,33 @@ module.exports = (robot) ->
 
       msg.reply _.join "\n"
 
+  # Listens to #NNNN and gives ticket info
+  robot.respond /.*(#(\d+)).*/, (msg) ->
+    id = msg.match[1].replace /#/, ""
+
+    ignoredUsers = process.env.HUBOT_REDMINE_IGNORED_USERS or ""
+
+    #Ignore cetain users, like Redmine plugins
+    if msg.message.user.name in ignoredUsers.split(',')
+      return
+
+    if isNaN(id)
+      return
+
+    params = []
+
+    redmine.Issue(id).show params, (err, data, status) ->
+      unless status == 200
+        # Issue not found, don't say anything
+        return false
+
+      issue = data.issue
+
+      url = "#{redmine.url}/issues/#{id}"
+      msg.send "##{issue.id} (#{issue.tracker.name})#{issue.subject}\n#{url}"
+
+
+
 # simple ghetto fab date formatter this should definitely be replaced, but didn't want to
 # introduce dependencies this early
 #
