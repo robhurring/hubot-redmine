@@ -1,6 +1,6 @@
 {
-  "name":        "redminejs",
-  "version":     "0.1",
+  "name":        "hubot-redmine",
+  "version":     "0.1.0",
   "author":      "rob hurring",
   "keywords":    "hubot plugin scripts campfire bot robot redmine",
   "description": "Basic redmine API for hubot or whatever",
