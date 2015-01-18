@@ -1,19 +1,24 @@
-# (redmine|show) me <issue-id>     - Show the issue status
-# show (my|user's) issues          - Show your issues or another user's issues
-# assign <issue-id> to <user-first-name> ["notes"]  - Assign the issue to the user (searches login or firstname)
-#                                                     *With optional notes
-# update <issue-id> with "<note>"  - Adds a note to the issue
-# add <hours> hours to <issue-id> ["comments"]  - Adds hours to the issue with the optional comments
-# link me <issue-id> - Returns a link to the redmine issue
-# set <issue-id> to <int>% ["comments"] - Updates an issue and sets the percent done
+# Description:
+#   Showing of redmine issuess via the REST API.
 #
+# Dependencies:
+#   None
 #
-# Note: <issue-id> can be formatted in the following ways:
-#       1234, #1234, issue 1234, issue #1234
+# Configuration:
+#   HUBOT_REDMINE_BASE_URL - URL to your Redmine install
+#   HUBOT_REDMINE_TOKEN - API key for your selected user
+#   HUBOT_REDMINE_SSL - Use "1" if your server uses SSL (https://)
+#
+# Commands:
+#   (redmine|show) me <issue-id>     - Show the issue status
+#   show (my|user's) issues          - Show your issues or another user's issues
+#   assign <issue-id> to <user-first-name> ["notes"]  - Assign the issue to the user (searches login or firstname)
+#   update <issue-id> with "<note>"  - Adds a note to the issue
+#   add <hours> hours to <issue-id> ["comments"]  - Adds hours to the issue with the optional comments
+#   link me <issue-id> - Returns a link to the redmine issue
+#   set <issue-id> to <int>% ["comments"] - Updates an issue and sets the percent done
 #
 #---
-#
-# Showing of redmine issuess via the REST API.
 #
 # To get set up refer to the guide http://www.redmine.org/projects/redmine/wiki/Rest_api#Authentication
 # After that, heroku needs the following config
