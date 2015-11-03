@@ -77,12 +77,12 @@ module.exports = (robot) ->
         msg.reply "Nothing could be logged. Make sure RedMine has a default activity set for time tracking. (Settings -> Enumerations -> Activities)"
 
   # Robot show <my|user's> [redmine] issues
-  robot.respond /show (?:my|(\w+\'s)) (?:redmine )?issues/i, (msg) ->
+  robot.respond /show @?(?:my|(\w+\ ?'s)) (?:redmine )?issues/i, (msg) ->
     userMode = true
     firstName =
       if msg.match[1]?
         userMode = false
-        msg.match[1].replace(/\'.+/, '')
+        msg.match[1].replace(/\'.+/, '').trim()
       else
         msg.message.user.name.split(/\s/)[0]
 
