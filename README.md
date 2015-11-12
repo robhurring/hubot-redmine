@@ -12,6 +12,20 @@ If using over SSL, add the following to your heroku config:
 
 ![screenshot](https://github.com/robhurring/hubot-redmine/blob/master/ss.png?raw=true)
 
+## Installation
+
+In hubot project repo, run:
+
+`npm install hubot-redmine --save`
+
+Then add **hubot-redmine** to your `external-scripts.json`:
+
+```json
+[
+  "hubot-redmine"
+]
+```
+
 ## Showing issue details
 
 * Hubot show me [issue id]
