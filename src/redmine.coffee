@@ -37,10 +37,10 @@ module.exports = (robot) ->
 
   # Robot set <issue> to <percent>% ["comments"]
   robot.respond /set (?:issue )?(?:#)?(\d+) to (\d{1,3})%?(?: "?([^"]+)"?)?/i, (msg) ->
-    [id, percent, notes] = msg.match[1..3]
+    [id, percent, userComments] = msg.match[1..3]
     percent = parseInt percent
 
-    if notes?
+    if userComments?
       notes = "#{msg.message.user.name}: #{userComments}"
     else
       notes = "Ratio set by: #{msg.message.user.name}"
