@@ -11,10 +11,12 @@
 #
 # Commands:
 #   hubot (redmine|show) me <issue-id>     - Show the issue status
+#   hubot starting <issue-id>              - Set the issue status, Defaults to "In Progress"
 #   hubot show (my|user's) issues          - Show your issues or another user's issues
 #   hubot assign <issue-id> to <user-first-name> ["notes"]  - Assign the issue to the user (searches login or firstname)
 #   hubot update <issue-id> with "<note>"  - Adds a note to the issue
 #   hubot add <hours> hours to <issue-id> ["comments"]  - Adds hours to the issue with the optional comments
+#   hubot add issue to "<project>" [traker <id>] with "<subject>"  - Add issue to specific project
 #   hubot link me <issue-id> - Returns a link to the redmine issue
 #   hubot set <issue-id> to <int>% ["comments"] - Updates an issue and sets the percent done
 #
@@ -77,8 +79,9 @@ module.exports = (robot) ->
         msg.reply "Nothing could be logged. Make sure RedMine has a default activity set for time tracking. (Settings -> Enumerations -> Activities)"
 
   # Robot show <my|user's> [redmine] issues
-  robot.respond /show @?(?:my|(\w+\s?'s)) (?:redmine )?issues/i, (msg) ->
+  robot.respond /show @?(?:my|(\w+\s?'?s?)) (?:redmine )?issues/i, (msg) ->
     userMode = true
+    console.log msg.match[1]
     firstName =
       if msg.match[1]?
         userMode = false
@@ -95,7 +98,7 @@ module.exports = (robot) ->
 
       params =
         "assigned_to_id": user.id
-        "limit": 25,
+        "limit": 10,
         "status_id": "open"
         "sort": "priority:desc",
 
@@ -108,7 +111,7 @@ module.exports = (robot) ->
           if userMode
             _.push "You have #{data.total_count} issue(s)."
           else
-            _.push "#{user.firstname} has #{data.total_count} issue(s)."
+            _.push "#{user.firstname} has #{data.total_count} issue(s) and limiting to 10 issues here. :) "
 
           for issue in data.issues
             do (issue) ->
@@ -131,6 +134,51 @@ module.exports = (robot) ->
           msg.reply "Couldn't update this issue, sorry :("
       else
         msg.reply "Done! Updated ##{id} with \"#{note}\""
+
+  # Robot set the <issue> status with <status>
+  robot.respond /starting (?:issue )?(?:#)?(\d+)(?: "?([^"]+)"?)?/i, (msg) ->
+    [id, status] = msg.match[1..2]
+
+    # status id
+    # 1 = New
+    # 2 = In Progress
+    # 3 = Resolved
+    # 4 = Closed
+    # 5 = Closed
+    # 6 = Rejected #Does not work as expected
+    # 7 = Awaiting design
+    # 8 = Ready
+
+    if status.match(/^New/i)
+      status_id = 1
+    else if status.match(/Progress/i)
+      status_id = 2
+    else if status.match(/Resolved/i)
+      status_id = 3
+    else if status.match(/Closed/i)
+      status_id = 5
+    else if status.match(/Rejected/i)
+      status_id = 6
+    else if status.match(/design/i)
+      status_id = 7
+    else if status.match(/Ready/i)
+      status_id = 8
+    else
+      status_id = 2
+
+    console.log "#{status_id}"
+    console.log "#{status}"
+    attributes =
+      "status_id": "#{status_id}"
+
+    redmine.Issue(id).update attributes, (err, data, _status) ->
+      unless data?
+        if _status == 404
+          msg.reply "Issue ##{id} doesn't exist."
+        else
+          msg.reply "Couldn't update the issue ##{id}, sorry :("
+      else
+        msg.reply "Done! Issue id ##{id} is now set to status '#{status}'"
 
   # Robot add issue to "<project>" [traker <id>] with "<subject>"
   robot.respond /add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
