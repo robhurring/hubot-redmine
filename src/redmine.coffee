@@ -159,7 +159,9 @@ module.exports = (robot) ->
         status_id = 5
       else if status.match(/Rejected/i)
         status_id = 6
-      else if status.match(/design/i)
+      else if status.match(/Design/i)
+        status_id = 7
+      else if status.match(/Awaiting/i)
         status_id = 7
       else if status.match(/Ready/i)
         status_id = 8
