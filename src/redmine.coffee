@@ -81,7 +81,6 @@ module.exports = (robot) ->
   # Robot show <my|user's> [redmine] issues
   robot.respond /show @?(?:my|(\w+\s?'?s?)) (?:redmine )?issues/i, (msg) ->
     userMode = true
-    console.log msg.match[1]
     firstName =
       if msg.match[1]?
         userMode = false
@@ -135,8 +134,8 @@ module.exports = (robot) ->
       else
         msg.reply "Done! Updated ##{id} with \"#{note}\""
 
-  # Robot set the <issue> status with <status>
-  robot.respond /starting (?:issue )?(?:#)?(\d+)(?: "?([^"]+)"?)?/i, (msg) ->
+  # Robot starting <issue> <status>
+  robot.respond /starting (?:issue )?(?:#)?(\d+) ?(?:([^*]+)?)?/i, (msg) ->
     [id, status] = msg.match[1..2]
 
     # status id
@@ -149,25 +148,29 @@ module.exports = (robot) ->
     # 7 = Awaiting design
     # 8 = Ready
 
-    if status.match(/^New/i)
-      status_id = 1
-    else if status.match(/Progress/i)
-      status_id = 2
-    else if status.match(/Resolved/i)
-      status_id = 3
-    else if status.match(/Closed/i)
-      status_id = 5
-    else if status.match(/Rejected/i)
-      status_id = 6
-    else if status.match(/design/i)
-      status_id = 7
-    else if status.match(/Ready/i)
-      status_id = 8
+    if status?
+      if status.match(/^New/i)
+        status_id = 1
+      else if status.match(/Progress/i)
+        status_id = 2
+      else if status.match(/Resolved/i)
+        status_id = 3
+      else if status.match(/Closed/i)
+        status_id = 5
+      else if status.match(/Rejected/i)
+        status_id = 6
+      else if status.match(/Design/i)
+        status_id = 7
+      else if status.match(/Awaiting/i)
+        status_id = 7
+      else if status.match(/Ready/i)
+        status_id = 8
+      else
+        status_id = 2
     else
+      status = "In Porgress"
       status_id = 2
 
-    console.log "#{status_id}"
-    console.log "#{status}"
     attributes =
       "status_id": "#{status_id}"
 
