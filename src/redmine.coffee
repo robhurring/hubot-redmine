@@ -168,7 +168,7 @@ module.exports = (robot) ->
       else
         status_id = 2
     else
-      status = "In Porgress"
+      status = "In Progress"
       status_id = 2
 
     attributes =
