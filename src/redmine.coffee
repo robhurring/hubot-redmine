@@ -7,6 +7,9 @@
 # Configuration:
 #   HUBOT_REDMINE_BASE_URL - URL to your Redmine install
 #   HUBOT_REDMINE_TOKEN - API key for your selected user
+#   HUBOT_REDMINE_MENTION_REGEX - Listen for this pattern and link to Redmine tickets when heard (default '/RM#(\d+)/')
+#   HUBOT_REDMINE_MENTION_MATCH - Index of matched capture from HUBOT_REDMINE_MENTION_REGEX (default 1)
+#   HUBOT_REDMINE_MENTION_IGNORE_USERS - Comma-separated list of users to ignore
 #
 # Commands:
 #   hubot (redmine|show) me <issue-id>     - Show the issue status
@@ -265,32 +268,24 @@ module.exports = (robot) ->
 
       msg.reply _.join "\n"
 
-  # Listens to #NNNN and gives ticket info
-  robot.respond /.*(#(\d+)).*/, (msg) ->
+  # Chime in on ticket mentions.
+  # Default requires double-backquote here but not in shell.
+  mentions_regex = RegExp process.env.HUBOT_REDMINE_MENTION_REGEX or '#(\\d+)'
+  robot.hear mentions_regex, (msg) ->
     id = msg.match[1].replace /#/, ""
-
-    ignoredUsers = process.env.HUBOT_REDMINE_IGNORED_USERS or ""
-
-    #Ignore cetain users, like Redmine plugins
-    if msg.message.user.name in ignoredUsers.split(',')
+    # Ignore certain users, like Redmine plugins.
+    ignoredUsers = process.env.HUBOT_REDMINE_MENTION_IGNORE_USERS or ""
+    if isNaN(id) or msg.message.user.name in ignoredUsers.split(',')
       return
 
-    if isNaN(id)
-      return
-
-    params = []
-
-    redmine.Issue(id).show params, (err, data, status) ->
+    redmine.Issue(id).show [], (err, data, status) ->
       unless status == 200
-        # Issue not found, don't say anything
         return false
-
       issue = data.issue
-
       url = "#{redmine.url}/issues/#{id}"
-      msg.send "##{issue.id} (#{issue.tracker.name})#{issue.subject}\n#{url}"
-
-
+      # Could be a template string for configurability?
+      msg.send "#{issue.tracker.name} ##{issue.id} (#{issue.project.name}): #{issue.subject} (#{issue.status.name}) [#{issue.priority.name}]"
+      msg.send "#{url}"
 
 # simple ghetto fab date formatter this should definitely be replaced, but didn't want to
 # introduce dependencies this early
