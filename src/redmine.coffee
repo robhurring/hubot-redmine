@@ -7,7 +7,6 @@
 # Configuration:
 #   HUBOT_REDMINE_BASE_URL - URL to your Redmine install
 #   HUBOT_REDMINE_TOKEN - API key for your selected user
-#   HUBOT_REDMINE_SSL - Use "1" if your server uses SSL (https://)
 #
 # Commands:
 #   hubot (redmine|show) me <issue-id>     - Show the issue status
@@ -21,13 +20,13 @@
 #   hubot set <issue-id> to <int>% ["comments"] - Updates an issue and sets the percent done
 #
 
-if process.env.HUBOT_REDMINE_SSL?
+URL = require('url')
+QUERY = require('querystring')
+
+if URL.parse(process.env.HUBOT_REDMINE_BASE_URL).protocol == 'https:'
   HTTP = require('https')
 else
   HTTP = require('http')
-
-URL = require('url')
-QUERY = require('querystring')
 
 module.exports = (robot) ->
   redmine = new Redmine process.env.HUBOT_REDMINE_BASE_URL, process.env.HUBOT_REDMINE_TOKEN
