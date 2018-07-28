@@ -7,6 +7,9 @@
 # Configuration:
 #   HUBOT_REDMINE_BASE_URL - URL to your Redmine install
 #   HUBOT_REDMINE_TOKEN - API key for your selected user
+#   HUBOT_REDMINE_MENTION_REGEX - Listen for this pattern and link to Redmine tickets when heard (default '/RM#(\d+)/')
+#   HUBOT_REDMINE_MENTION_MATCH - Index of matched capture from HUBOT_REDMINE_MENTION_REGEX (default 1)
+#   HUBOT_REDMINE_MENTION_IGNORE_USERS - Comma-separated list of users to ignore
 #
 # Commands:
 #   hubot (redmine|show) me <issue-id>     - Show the issue status
@@ -264,6 +267,25 @@ module.exports = (robot) ->
             _.push "    #{journal.notes}\n"
 
       msg.reply _.join "\n"
+
+  # Chime in on ticket mentions.
+  # Default requires double-backquote here but not in shell.
+  mentions_regex = RegExp process.env.HUBOT_REDMINE_MENTION_REGEX or '#(\\d+)'
+  robot.hear mentions_regex, (msg) ->
+    id = msg.match[1].replace /#/, ""
+    # Ignore certain users, like Redmine plugins.
+    ignoredUsers = process.env.HUBOT_REDMINE_MENTION_IGNORE_USERS or ""
+    if isNaN(id) or msg.message.user.name in ignoredUsers.split(',')
+      return
+
+    redmine.Issue(id).show [], (err, data, status) ->
+      unless status == 200
+        return false
+      issue = data.issue
+      url = "#{redmine.url}/issues/#{id}"
+      # Could be a template string for configurability?
+      msg.send "#{issue.tracker.name} ##{issue.id} (#{issue.project.name}): #{issue.subject} (#{issue.status.name}) [#{issue.priority.name}]"
+      msg.send "#{url}"
 
 # simple ghetto fab date formatter this should definitely be replaced, but didn't want to
 # introduce dependencies this early
