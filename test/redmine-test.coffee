@@ -22,7 +22,7 @@ describe 'redmine', ->
     expect(@robot.respond).to.have.been.calledWith(/add (\d{1,2}) hours? to (?:issue )?(?:#)?(\d+)(?: "?([^"]+)"?)?/i)
 
   it 'registers a show listener', ->
-    expect(@robot.respond).to.have.been.calledWith(/show (?:my|(\w+\'s)) (?:redmine )?issues/i)
+    expect(@robot.respond).to.have.been.calledWith(/show @?(?:my|(\w+\s?'?s?)) (?:redmine )?issues/i)
 
   it 'registers a update listener', ->
     expect(@robot.respond).to.have.been.calledWith(/update (?:issue )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/i)
