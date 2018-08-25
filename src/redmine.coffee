@@ -280,6 +280,8 @@ module.exports = (robot) ->
           _ = []
           for result in data.results
             _.push "#{result.title} - #{result.url}"
+          if data.total_count > data.limit
+            _.push "More results: #{process.env.HUBOT_REDMINE_BASE_URL}/search?q=#{query}"
           msg.reply _.join "\n"
         else
           msg.reply "No search results for #{query}"
