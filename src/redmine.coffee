@@ -403,7 +403,7 @@ class Redmine
       @post "/time_entries.json", {time_entry: attributes}, callback
 
   search: (term, callback) ->
-    @get "/search.json?q=#{encodeURI term}", {}, callback
+    @get "/search.json", { q: encodeURI term }, callback
 
   # Private: do a GET request against the API
   get: (path, params, callback) ->
