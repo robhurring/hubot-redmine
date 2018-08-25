@@ -25,7 +25,7 @@ describe 'redmine', ->
     expect(@robot.respond).to.have.been.calledWith(/link me (?:issue )?(?:#)?(\d+)/i)
 
   it 'registers a search listener', ->
-    expect(@robot.respond).to.have.been.calledWith(/(redmine search|search redmine) (.*)/i)
+    expect(@robot.respond).to.have.been.calledWith(/redmine search (.*)/i)
 
   it 'registers a set listener', ->
     expect(@robot.respond).to.have.been.calledWith(/set (?:issue )?(?:#)?(\d+) to (\d{1,3})%?(?: "?([^"]+)"?)?/i)

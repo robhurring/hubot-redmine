@@ -269,7 +269,7 @@ module.exports = (robot) ->
       msg.reply _.join "\n"
 
   # Robot redmine search <query>
-  robot.respond /(redmine search|search redmine) (.*)/i, (msg) ->
+  robot.respond /redmine search (.*)/i, (msg) ->
     query = msg.match[2]
     redmine.search query, (err, data) ->
       if err?
