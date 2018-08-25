@@ -270,7 +270,7 @@ module.exports = (robot) ->
 
   # Robot redmine search <query>
   robot.respond /redmine search (.*)/i, (msg) ->
-    query = msg.match[2]
+    query = msg.match[1]
     redmine.search query, (err, data) ->
       if err?
         msg.reply "Couldn't get search results!"
