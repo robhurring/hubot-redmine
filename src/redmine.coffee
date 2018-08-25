@@ -268,6 +268,22 @@ module.exports = (robot) ->
 
       msg.reply _.join "\n"
 
+  # Robot redmine search <query>
+  robot.respond /(redmine search|search redmine) (.*)/i, (msg) ->
+    query = msg.match[2]
+    redmine.search query, (err, data) ->
+      if err?
+        msg.reply "Couldn't get search results!"
+        robot.logger.debug err
+      else
+        if data.total_count?
+          _ = []
+          for result in data.results
+            _.push "#{result.title} - #{result.url}"
+          msg.reply _.join "\n"
+        else
+          msg.reply "No search results for #{query}"
+
   # Chime in on ticket mentions.
   # Default requires double-backquote here but not in shell.
   mentions_regex = RegExp process.env.HUBOT_REDMINE_MENTION_REGEX or '#(\\d+)'
@@ -385,6 +401,9 @@ class Redmine
 
     create: (attributes, callback) =>
       @post "/time_entries.json", {time_entry: attributes}, callback
+
+  search: (term, callback) ->
+    @get "/search.json?q=#{encodeURI term}", {}, callback
 
   # Private: do a GET request against the API
   get: (path, params, callback) ->
