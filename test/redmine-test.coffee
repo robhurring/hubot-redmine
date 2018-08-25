@@ -12,13 +12,13 @@ describe 'redmine', ->
 
     require('../src/redmine')(@robot)
 
-  it 'registers a add listener', ->
+  it 'registers a add hours to issue listener', ->
     expect(@robot.respond).to.have.been.calledWith(/add (\d{1,2}) hours? to (?:issue )?(?:#)?(\d+)(?: "?([^"]+)"?)?/i)
 
-  it 'registers a add listener', ->
+  it 'registers a add issue to tracker listener', ->
     expect(@robot.respond).to.have.been.calledWith(/add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i)
 
-  it 'registers a assign listener', ->
+  it 'registers a assign issue listener', ->
     expect(@robot.respond).to.have.been.calledWith(/assign (?:issue )?(?:#)?(\d+) to (\w+)(?: "?([^"]+)"?)?/i)
 
   it 'registers a link me listener', ->
