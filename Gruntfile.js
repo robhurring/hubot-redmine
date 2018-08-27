@@ -12,12 +12,6 @@ module.exports = function (grunt) {
         src: ['test/**/*.coffee']
       }
     },
-    release: {
-      options: {
-        tagName: 'v<%= version %>',
-        commitMessage: 'Prepared to release <%= version %>.'
-      }
-    },
     watch: {
       files: ['Gruntfile.js', 'src/**/*.coffee', 'test/**/*.coffee'],
       tasks: ['test']
