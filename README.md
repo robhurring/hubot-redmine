@@ -55,4 +55,10 @@ Then add **hubot-redmine** to your `external-scripts.json`:
 * Hubot set [issue id] to 100% "[comments]"
 * Hubot add [hours] hours to [issue id] "[comments]"
 
+## Search Redmine
+
+The default results limit is 10, configurable via `HUBOT_REDMINE_SEARCH_LIMIT`.
+
+* Hubot redmine search <query>
+
 ## More coming!

@@ -10,6 +10,7 @@
 #   HUBOT_REDMINE_MENTION_REGEX - Listen for this pattern and link to Redmine tickets when heard (default '/RM#(\d+)/')
 #   HUBOT_REDMINE_MENTION_MATCH - Index of matched capture from HUBOT_REDMINE_MENTION_REGEX (default 1)
 #   HUBOT_REDMINE_MENTION_IGNORE_USERS - Comma-separated list of users to ignore
+#   HUBOT_REDMINE_SEARCH_LIMIT - Maximum search results to show for "redmine search", default is 10
 #
 # Commands:
 #   hubot (redmine|show) me <issue-id>     - Show the issue status
@@ -268,6 +269,26 @@ module.exports = (robot) ->
 
       msg.reply _.join "\n"
 
+  # Robot redmine search <query>
+  robot.respond /redmine search (.*)/i, (msg) ->
+    params =
+      q: encodeURI msg.match[1]
+      limit: process.env.HUBOT_REDMINE_SEARCH_LIMIT || 10
+    redmine.search params, (err, data) ->
+      if err?
+        msg.reply "Couldn't get search results!"
+        robot.logger.debug err
+      else
+        if data.total_count?
+          _ = []
+          for result in data.results
+            _.push "#{result.title} - #{result.url}"
+          if data.total_count > data.limit
+            _.push "More results: #{process.env.HUBOT_REDMINE_BASE_URL}/search?q=#{params.q}"
+          msg.reply _.join "\n"
+        else
+          msg.reply "No search results for #{params.q}"
+
   # Chime in on ticket mentions.
   # Default requires double-backquote here but not in shell.
   mentions_regex = RegExp process.env.HUBOT_REDMINE_MENTION_REGEX or '#(\\d+)'
@@ -385,6 +406,9 @@ class Redmine
 
     create: (attributes, callback) =>
       @post "/time_entries.json", {time_entry: attributes}, callback
+
+  search: (params, callback) ->
+    @get "/search.json", params, callback
 
   # Private: do a GET request against the API
   get: (path, params, callback) ->
