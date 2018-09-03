@@ -13,32 +13,41 @@
 #   HUBOT_REDMINE_SEARCH_LIMIT - Maximum search results to show for "redmine search", default is 10
 #
 # Commands:
-#   hubot (redmine|show) me <issue-id>     - Show the issue status
-#   hubot starting <issue-id>              - Set the issue status, Defaults to "In Progress"
-#   hubot show (my|user's) issues          - Show your issues or another user's issues
+#   hubot (redmine|show) me <issue-id> - Show the issue status
+#   hubot starting <issue-id> - Set the issue status, Defaults to "In Progress"
+#   hubot show (my|user's) issues - Show your issues or another user's issues
 #   hubot assign <issue-id> to <user-first-name> ["notes"]  - Assign the issue to the user (searches login or firstname)
 #   hubot update <issue-id> with "<note>"  - Adds a note to the issue
 #   hubot add <hours> hours to <issue-id> ["comments"]  - Adds hours to the issue with the optional comments
-#   hubot add issue to "<project>" [traker <id>] with "<subject>"  - Add issue to specific project
+#   hubot add issue to "<project>" [tracker <id>] with "<subject>"  - Add issue to specific project
 #   hubot link me <issue-id> - Returns a link to the redmine issue
 #   hubot set <issue-id> to <int>% ["comments"] - Updates an issue and sets the percent done
+#   hubot redmine search <query> - Search for a particular issue, wiki page, etc.
 #
 
-URL = require('url')
 QUERY = require('querystring')
-
-if URL.parse(process.env.HUBOT_REDMINE_BASE_URL).protocol == 'https:'
-  HTTP = require('https')
-else
-  HTTP = require('http')
+Redmine = require('node-redmine')
 
 module.exports = (robot) ->
-  redmine = new Redmine process.env.HUBOT_REDMINE_BASE_URL, process.env.HUBOT_REDMINE_TOKEN
+  # Ensure configuration variables are set
+  unless process.env.HUBOT_REDMINE_BASE_URL?
+    robot.logger.error 'HUBOT_REDMINE_BASE_URL configuration variable missing.'
+    return
+  unless process.env.HUBOT_REDMINE_TOKEN?
+    robot.logger.error 'HUBOT_REDMINE_TOKEN configuration variable missing.'
+    return
 
+  # Initialize Redmine connection
+  try
+    redmine = new Redmine process.env.HUBOT_REDMINE_BASE_URL, { apiKey: process.env.HUBOT_REDMINE_TOKEN }
+  catch err
+    robot.logger.error err
+    return
+  
   # Robot link me <issue>
   robot.respond /link me (?:issue )?(?:#)?(\d+)/i, (msg) ->
     id = msg.match[1]
-    msg.reply "#{redmine.url}/issues/#{id}"
+    msg.reply "#{process.env.HUBOT_REDMINE_BASE_URL}/issues/#{id}"
 
   # Robot set <issue> to <percent>% ["comments"]
   robot.respond /set (?:issue )?(?:#)?(\d+) to (\d{1,3})%?(?: "?([^"]+)"?)?/i, (msg) ->
@@ -54,16 +63,16 @@ module.exports = (robot) ->
       "notes": notes
       "done_ratio": percent
 
-    redmine.Issue(id).update attributes, (err, data, status) ->
-      if status == 200
-        msg.reply "Set ##{id} to #{percent}%"
-      else
-        msg.reply "Update failed! (#{err})"
+    redmine.update_issue id, attributes, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
+      msg.reply "Set ##{id} to #{percent}%"
 
   # Robot add <hours> hours to <issue_id> ["comments for the time tracking"]
-  robot.respond /add (\d{1,2}) hours? to (?:issue )?(?:#)?(\d+)(?: "?([^"]+)"?)?/i, (msg) ->
+  robot.respond /add (\d{1,2}) hours? to (?:issue )?(?:#)?([+-]?([0-9]*[.])?[0-9]+)(?: "?([^"]+)"?)?/i, (msg) ->
     [hours, id, userComments] = msg.match[1..3]
-    hours = parseInt hours
 
     if userComments?
       comments = "#{msg.message.user.name}: #{userComments}"
@@ -75,11 +84,12 @@ module.exports = (robot) ->
       "hours": hours
       "comments": comments
 
-    redmine.TimeEntry(null).create attributes, (error, data, status) ->
-      if status == 201
-        msg.reply "Your time was logged"
-      else
-        msg.reply "Nothing could be logged. Make sure RedMine has a default activity set for time tracking. (Settings -> Enumerations -> Activities)"
+    redmine.create_time_entry attributes, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
+      msg.reply "Your time was logged"
 
   # Robot show <my|user's> [redmine] issues
   robot.respond /show @?(?:my|(\w+\s?'?s?)) (?:redmine )?issues/i, (msg) ->
@@ -91,7 +101,11 @@ module.exports = (robot) ->
       else
         msg.message.user.name.split(/\s/)[0]
 
-    redmine.Users name:firstName, (err,data) ->
+    redmine.users name:firstName, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
       unless data.total_count > 0
         msg.reply "Couldn't find any users with the name \"#{firstName}\""
         return false
@@ -104,22 +118,23 @@ module.exports = (robot) ->
         "status_id": "open"
         "sort": "priority:desc",
 
-      redmine.Issues params, (err, data) ->
+      redmine.issues params, (err, data) ->
         if err?
-          msg.reply "Couldn't get a list of issues for you!"
+          robot.logger.error err
+          return msg.reply "Couldn't get a list of issues for you!"
+
+        _ = []
+
+        if userMode
+          _.push "You have #{data.total_count} issue(s)."
         else
-          _ = []
+          _.push "#{user.firstname} has #{data.total_count} issue(s) and limiting to 10 issues here. :) "
 
-          if userMode
-            _.push "You have #{data.total_count} issue(s)."
-          else
-            _.push "#{user.firstname} has #{data.total_count} issue(s) and limiting to 10 issues here. :) "
+        for issue in data.issues
+          do (issue) ->
+            _.push "\n[#{issue.tracker.name} - #{issue.priority.name} - #{issue.status.name}] ##{issue.id}: #{issue.subject}"
 
-          for issue in data.issues
-            do (issue) ->
-              _.push "\n[#{issue.tracker.name} - #{issue.priority.name} - #{issue.status.name}] ##{issue.id}: #{issue.subject}"
-
-          msg.reply _.join "\n"
+        msg.reply _.join "\n"
 
   # Robot update <issue> with "<note>"
   robot.respond /update (?:issue )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/i, (msg) ->
@@ -128,28 +143,16 @@ module.exports = (robot) ->
     attributes =
       "notes": "#{msg.message.user.name}: #{note}"
 
-    redmine.Issue(id).update attributes, (err, data, status) ->
-      unless data?
-        if status == 404
-          msg.reply "Issue ##{id} doesn't exist."
-        else
-          msg.reply "Couldn't update this issue, sorry :("
-      else
-        msg.reply "Done! Updated ##{id} with \"#{note}\""
+    redmine.update_issue id, attributes, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
+      msg.reply "Done! Updated ##{id} with \"#{note}\""
 
   # Robot starting <issue> <status>
   robot.respond /starting (?:issue )?(?:#)?(\d+) ?(?:([^*]+)?)?/i, (msg) ->
     [id, status] = msg.match[1..2]
-
-    # status id
-    # 1 = New
-    # 2 = In Progress
-    # 3 = Resolved
-    # 4 = Closed
-    # 5 = Closed
-    # 6 = Rejected #Does not work as expected
-    # 7 = Awaiting design
-    # 8 = Ready
 
     if status?
       if status.match(/^New/i)
@@ -158,16 +161,12 @@ module.exports = (robot) ->
         status_id = 2
       else if status.match(/Resolved/i)
         status_id = 3
+      else if status.match(/Feedback/i)
+        status_id = 4
       else if status.match(/Closed/i)
         status_id = 5
       else if status.match(/Rejected/i)
         status_id = 6
-      else if status.match(/Design/i)
-        status_id = 7
-      else if status.match(/Awaiting/i)
-        status_id = 7
-      else if status.match(/Ready/i)
-        status_id = 8
       else
         status_id = 2
     else
@@ -177,16 +176,14 @@ module.exports = (robot) ->
     attributes =
       "status_id": "#{status_id}"
 
-    redmine.Issue(id).update attributes, (err, data, _status) ->
-      unless data?
-        if _status == 404
-          msg.reply "Issue ##{id} doesn't exist."
-        else
-          msg.reply "Couldn't update the issue ##{id}, sorry :("
-      else
-        msg.reply "Done! Issue id ##{id} is now set to status '#{status}'"
+    redmine.update_issue id, attributes, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
 
-  # Robot add issue to "<project>" [traker <id>] with "<subject>"
+      msg.reply "Done! Issue id ##{id} is now set to status '#{status}'"
+
+  # Robot add issue to "<project>" [tracker <id>] with "<subject>"
   robot.respond /add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
     [project_id, tracker_id, subject] = msg.match[1..3]
 
@@ -200,18 +197,22 @@ module.exports = (robot) ->
         "subject": "#{subject}"
         "tracker_id": "#{tracker_id}"
 
-    redmine.Issue().add attributes, (err, data, status) ->
-      unless data?
-        if status == 404
-          msg.reply "Couldn't update this issue, #{status} :("
-      else
-        msg.reply "Done! Added issue #{data.id} with \"#{subject}\""
+    redmine.create_issue attributes, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
+      msg.reply "Done! Added issue #{data.id} with \"#{subject}\""
 
   # Robot assign <issue> to <user> ["note to add with the assignment]
   robot.respond /assign (?:issue )?(?:#)?(\d+) to (\w+)(?: "?([^"]+)"?)?/i, (msg) ->
     [id, userName, note] = msg.match[1..3]
 
-    redmine.Users name:userName, (err, data) ->
+    redmine.users name:userName, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
       unless data.total_count > 0
         msg.reply "Couldn't find any users with the name \"#{userName}\""
         return false
@@ -226,30 +227,23 @@ module.exports = (robot) ->
       attributes["notes"] = "#{msg.message.user.name}: #{note}" if note?
 
       # get our issue
-      redmine.Issue(id).update attributes, (err, data, status) ->
-        unless data?
-          if status == 404
-            msg.reply "Issue ##{id} doesn't exist."
-          else
-            msg.reply "There was an error assigning this issue."
-        else
-          msg.reply "Assigned ##{id} to #{user.firstname}."
-          msg.send '/play trombone' if parseInt(id) == 3631
+      redmine.update_issue id, attributes, (err, data) ->
+        if err
+          robot.logger.error err
+          return msg.reply err
+
+        msg.reply "Assigned ##{id} to #{user.firstname}."
 
   # Robot redmine me <issue>
   robot.respond /(?:redmine|show)(?: me)? (?:issue )?(?:#)?(\d+)/i, (msg) ->
-    id = msg.match[1]
+    id = parseInt(msg.match[1], 10)
 
     params =
-      "include": "journals"
+      include: "journals"
 
-    redmine.Issue(id).show params, (err, data, status) ->
-      unless status == 200
-        msg.reply "Issue ##{id} doesn't exist."
-        return false
-
+    redmine.get_issue_by_id id, params, (err, data) ->
       issue = data.issue
-
+      robot.logger.debug issue
       _ = []
       _.push "\n[#{issue.project.name} - #{issue.priority.name}] #{issue.tracker.name} ##{issue.id} (#{issue.status.name})"
       _.push "Assigned: #{issue.assigned_to?.name ? 'Nobody'} (opened by #{issue.author.name})"
@@ -259,27 +253,38 @@ module.exports = (robot) ->
       _.push "\n#{issue.description}"
 
       # journals
-      _.push "\n" + Array(10).join('-') + '8<' + Array(50).join('-') + "\n"
-      for journal in issue.journals
-        do (journal) ->
-          if journal.notes? and journal.notes != ""
-            date = formatDate journal.created_on, 'mm/dd/yyyy (hh:ii ap)'
-            _.push "#{journal.user.name} on #{date}:"
-            _.push "    #{journal.notes}\n"
+      if issue.journals?
+        _.push "\n" + Array(10).join('-') + '8<' + Array(50).join('-') + "\n"
+        for journal in issue.journals
+          do (journal) ->
+            if journal.notes? and journal.notes != ""
+              date = formatDate journal.created_on, 'mm/dd/yyyy (hh:ii ap)'
+              _.push "#{journal.user.name} on #{date}:"
+              _.push "    #{journal.notes}\n"
 
       msg.reply _.join "\n"
 
   # Robot redmine search <query>
   robot.respond /redmine search (.*)/i, (msg) ->
     params =
-      q: encodeURI msg.match[1]
+      q: msg.match[1]
       limit: process.env.HUBOT_REDMINE_SEARCH_LIMIT || 10
-    redmine.search params, (err, data) ->
-      if err?
-        msg.reply "Couldn't get search results!"
-        robot.logger.debug err
-      else
-        if data.total_count?
+
+    # Search endpoint Not available in node-redmine@0.2.1
+    robot.http("#{process.env.HUBOT_REDMINE_BASE_URL}/search.json?#{QUERY.stringify(params)}")
+      .header('x-redmine-api-key', process.env.HUBOT_REDMINE_TOKEN)
+      .get() (err, res, body) ->
+        if err?
+          robot.logger.error err
+          return msg.reply err
+
+        try
+          data = JSON.parse(body)
+        catch err
+          robot.logger.error err
+          return msg.reply err
+
+        if data.total_count > 0
           _ = []
           for result in data.results
             _.push "#{result.title} - #{result.url}"
@@ -293,72 +298,75 @@ module.exports = (robot) ->
   # Default requires double-backquote here but not in shell.
   mentions_regex = RegExp process.env.HUBOT_REDMINE_MENTION_REGEX or '#(\\d+)'
   robot.hear mentions_regex, (msg) ->
-    id = msg.match[1].replace /#/, ""
+    id = parseInt(msg.match[1], 10)
     # Ignore certain users, like Redmine plugins.
     ignoredUsers = process.env.HUBOT_REDMINE_MENTION_IGNORE_USERS or ""
-    if isNaN(id) or msg.message.user.name in ignoredUsers.split(',')
+    if isNaN(id) or id == 0 or msg.message.user.name in ignoredUsers.split(',')
       return
 
-    redmine.Issue(id).show [], (err, data, status) ->
-      unless status == 200
-        return false
+    params = {}
+
+    redmine.get_issue_by_id id, params, (err, data) ->
+      if err
+        robot.logger.error err
+        return msg.reply err
+
       issue = data.issue
-      url = "#{redmine.url}/issues/#{id}"
+      url = "#{process.env.HUBOT_REDMINE_BASE_URL}/issues/#{id}"
       # Could be a template string for configurability?
       msg.send "#{issue.tracker.name} ##{issue.id} (#{issue.project.name}): #{issue.subject} (#{issue.status.name}) [#{issue.priority.name}]"
       msg.send "#{url}"
 
-# simple ghetto fab date formatter this should definitely be replaced, but didn't want to
-# introduce dependencies this early
-#
-# dateStamp - any string that can initialize a date
-# fmt - format string that may use the following elements
-#       mm - month
-#       dd - day
-#       yyyy - full year
-#       hh - hours
-#       ii - minutes
-#       ss - seconds
-#       ap - am / pm
-#
-# returns the formatted date
-formatDate = (dateStamp, fmt = 'mm/dd/yyyy at hh:ii ap') ->
-  d = new Date(dateStamp)
+  # simple ghetto fab date formatter this should definitely be replaced, but didn't want to
+  # introduce dependencies this early
+  #
+  # dateStamp - any string that can initialize a date
+  # fmt - format string that may use the following elements
+  #       mm - month
+  #       dd - day
+  #       yyyy - full year
+  #       hh - hours
+  #       ii - minutes
+  #       ss - seconds
+  #       ap - am / pm
+  #
+  # returns the formatted date
+  formatDate = (dateStamp, fmt = 'mm/dd/yyyy at hh:ii ap') ->
+    d = new Date(dateStamp)
 
-  # split up the date
-  [m,d,y,h,i,s,ap] =
-    [d.getMonth() + 1, d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes(), d.getSeconds(), 'AM']
+    # split up the date
+    [m,d,y,h,i,s,ap] =
+      [d.getMonth() + 1, d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes(), d.getSeconds(), 'AM']
 
-  # leadig 0s
-  i = "0#{i}" if i < 10
-  s = "0#{s}" if s < 10
+    # leadig 0s
+    i = "0#{i}" if i < 10
+    s = "0#{s}" if s < 10
 
-  # adjust hours
-  if h > 12
-    h = h - 12
-    ap = "PM"
+    # adjust hours
+    if h > 12
+      h = h - 12
+      ap = "PM"
 
-  # ghetto fab!
-  fmt
-    .replace(/mm/, m)
-    .replace(/dd/, d)
-    .replace(/yyyy/, y)
-    .replace(/hh/, h)
-    .replace(/ii/, i)
-    .replace(/ss/, s)
-    .replace(/ap/, ap)
+    # ghetto fab!
+    fmt
+      .replace(/mm/, m)
+      .replace(/dd/, d)
+      .replace(/yyyy/, y)
+      .replace(/hh/, h)
+      .replace(/ii/, i)
+      .replace(/ss/, s)
+      .replace(/ap/, ap)
 
-# tries to resolve ambiguous users by matching login or firstname
-# redmine's user search is pretty broad (using login/name/email/etc.) so
-# we're trying to just pull it in a bit and get a single user
-#
-# name - this should be the name you're trying to match
-# data - this is the array of users from redmine
-#
-# returns an array with a single user, or the original array if nothing matched
-resolveUsers = (name, data) ->
+  # tries to resolve ambiguous users by matching login or firstname
+  # redmine's user search is pretty broad (using login/name/email/etc.) so
+  # we're trying to just pull it in a bit and get a single user
+  #
+  # name - this should be the name you're trying to match
+  # data - this is the array of users from redmine
+  #
+  # returns an array with a single user, or the original array if nothing matched
+  resolveUsers = (name, data) ->
     name = name.toLowerCase();
-
     # try matching login
     found = data.filter (user) -> user.login.toLowerCase() == name
     return found if found.length == 1
@@ -369,111 +377,3 @@ resolveUsers = (name, data) ->
 
     # give up
     data
-
-# Redmine API Mapping
-# This isn't 100% complete, but its the basics for what we would need in campfire
-class Redmine
-  constructor: (url, token) ->
-    @url = url
-    @token = token
-
-  Users: (params, callback) ->
-    @get "/users.json", params, callback
-
-  User: (id) ->
-
-    show: (callback) =>
-      @get "/users/#{id}.json", {}, callback
-
-  Projects: (params, callback) ->
-    @get "/projects.json", params, callback
-
-  Issues: (params, callback) ->
-    @get "/issues.json", params, callback
-
-  Issue: (id) ->
-
-    show: (params, callback) =>
-      @get "/issues/#{id}.json", params, callback
-
-    update: (attributes, callback) =>
-      @put "/issues/#{id}.json", {issue: attributes}, callback
-
-    add: (attributes, callback) =>
-      @post "/issues.json", {issue: attributes}, callback
-
-  TimeEntry: (id = null) ->
-
-    create: (attributes, callback) =>
-      @post "/time_entries.json", {time_entry: attributes}, callback
-
-  search: (params, callback) ->
-    @get "/search.json", params, callback
-
-  # Private: do a GET request against the API
-  get: (path, params, callback) ->
-    path = "#{path}?#{QUERY.stringify params}" if params?
-    @request "GET", path, null, callback
-
-  # Private: do a POST request against the API
-  post: (path, body, callback) ->
-    @request "POST", path, body, callback
-
-  # Private: do a PUT request against the API
-  put: (path, body, callback) ->
-    @request "PUT", path, body, callback
-
-  # Private: Perform a request against the redmine REST API
-  # from the campfire adapter :)
-  request: (method, path, body, callback) ->
-    headers =
-      "Content-Type": "application/json"
-      "X-Redmine-API-Key": @token
-
-    endpoint = URL.parse(@url)
-    pathname = endpoint.pathname.replace /^\/$/, ''
-
-    options =
-      "host"   : endpoint.hostname
-      "port"   : endpoint.port
-      "path"   : "#{pathname}#{path}"
-      "method" : method
-      "headers": headers
-
-    if method in ["POST", "PUT"]
-      if typeof(body) isnt "string"
-        body = JSON.stringify body
-
-      options.headers["Content-Length"] = body.length
-
-    request = HTTP.request options, (response) ->
-      data = ""
-
-      response.on "data", (chunk) ->
-        data += chunk
-
-      response.on "end", ->
-        switch response.statusCode
-          when 200
-            try
-              callback null, JSON.parse(data), response.statusCode
-            catch err
-              callback null, (data or { }), response.statusCode
-          when 401
-            throw new Error "401: Authentication failed."
-          else
-            console.error "Code: #{response.statusCode}"
-            callback null, null, response.statusCode
-
-      response.on "error", (err) ->
-        console.error "Redmine response error: #{err}"
-        callback err, null, response.statusCode
-
-    if method in ["POST", "PUT"]
-      request.end(body, 'binary')
-    else
-      request.end()
-
-    request.on "error", (err) ->
-      console.error "Redmine request error: #{err}"
-      callback err, null, 0
