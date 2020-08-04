@@ -1,6 +1,6 @@
 {
   "name": "hubot-redmine",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "rob hurring",
   "description": "Basic redmine API for hubot or whatever",
   "repository": {
