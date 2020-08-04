@@ -2,7 +2,7 @@
   "name": "hubot-redmine",
   "version": "0.2.3",
   "author": "rob hurring",
-  "description": "Basic redmine API for hubot or whatever",
+  "description": "Interact with a Redmine instance.",
   "repository": {
     "type": "git",
     "url": "https://github.com/robhurring/hubot-redmine.git"

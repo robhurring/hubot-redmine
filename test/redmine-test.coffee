@@ -53,23 +53,23 @@ describe 'hubot-redmine', ->
 
   # hubot starting <issue-id>
   it 'sets an issue to in progress', (done) ->
-      nock('https://redmine.example.org')
-        .intercept('/issues/100.json', 'PUT')
-        .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
+    nock('https://redmine.example.org')
+      .intercept('/issues/100.json', 'PUT')
+      .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
 
-      selfRoom = @room
-      selfRoom.user.say('alice', '@hubot starting 100')
-      setTimeout(() ->
-        try
-          expect(selfRoom.messages).to.eql [
-            ['alice', '@hubot starting 100']
-            ['hubot', "@alice Done! Issue id #100 is now set to status 'In Progress'"]
-          ]
-          done()
-        catch err
-          done err
-        return
-      , 1000)
+    selfRoom = @room
+    selfRoom.user.say('alice', '@hubot redmine starting 100')
+    setTimeout(() ->
+      try
+        expect(selfRoom.messages).to.eql [
+          ['alice', '@hubot redmine starting 100']
+          ['hubot', "@alice Done! Issue id #100 is now set to status 'In Progress'"]
+        ]
+        done()
+      catch err
+        done err
+      return
+    , 1000)
   
   # hubot show (my|user's) issues
   it 'retrieves a list of my issues', (done) ->
@@ -82,11 +82,11 @@ describe 'hubot-redmine', ->
         .replyWithFile(200, __dirname + '/fixtures/issues-mine.json')
 
       selfRoom = @room
-      selfRoom.user.say('alice', '@hubot show my issues')
+      selfRoom.user.say('alice', '@hubot redmine show my issues')
       setTimeout(() ->
         try
           expect(selfRoom.messages).to.eql [
-            ['alice', '@hubot show my issues']
+            ['alice', '@hubot redmine show my issues']
             ['hubot', "@alice You have 135 issue(s).\n\n[Feature - High - New] #3506: Need ability to restrict which  role  can update/select the target version   when updating  or submitting an issue\n\n[Defect - High - New] #3578: Subversion fetch_changesets does not handle moved (root-)directories\n\n[Feature - High - New] #4714: hide \"Projects\" from the main menu for anonymous users, when there are no public projects\n\n[Defect - High - Confirmed] #13424: Demo instance\n\n[Defect - High - Reopened] #19229: redmine.org plugin page only shows latest version compatibility\n\n[Defect - High - New] #21379: Plugin author is not able to delete plugin versions\n\n[Defect - High - Confirmed] #25726: Issue details page shows default values for custom fields that aren't actually set\n\n[Defect - High - Confirmed] #28882: GDPR compliance\n\n[Patch - Normal - New] #240: views/user/edit, make password fields not-autocomplete (UI fix)\n\n[Defect - Normal - New] #668: Date input fields don't respect date format settings"]
           ]
           done()
@@ -97,27 +97,27 @@ describe 'hubot-redmine', ->
 
   # hubot assign <issue-id> to <user-first-name> ["notes"]
   it 'assigns an issue to another user', (done) ->
-      nock('https://redmine.example.org')
-        .get('/users.json?name=alice2')
-        .replyWithFile(200, __dirname + '/fixtures/users-search.json')
-      
-      nock('https://redmine.example.org')
-        .intercept('/issues/100.json', 'PUT')
-        .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
+    nock('https://redmine.example.org')
+      .get('/users.json?name=alice2')
+      .replyWithFile(200, __dirname + '/fixtures/users-search.json')
+    
+    nock('https://redmine.example.org')
+      .intercept('/issues/100.json', 'PUT')
+      .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
 
-      selfRoom = @room
-      selfRoom.user.say('alice', '@hubot assign 100 to alice2 "Take a look at this one."')
-      setTimeout(() ->
-        try
-          expect(selfRoom.messages).to.eql [
-            ['alice', '@hubot assign 100 to alice2 "Take a look at this one."']
-            ['hubot', "@alice Assigned #100 to Alice."]
-          ]
-          done()
-        catch err
-          done err
-        return
-      , 1000)
+    selfRoom = @room
+    selfRoom.user.say('alice', '@hubot redmine assign 100 to alice2 "Take a look at this one."')
+    setTimeout(() ->
+      try
+        expect(selfRoom.messages).to.eql [
+          ['alice', '@hubot redmine assign 100 to alice2 "Take a look at this one."']
+          ['hubot', "@alice Assigned #100 to Alice."]
+        ]
+        done()
+      catch err
+        done err
+      return
+    , 1000)
 
   # hubot update <issue-id> with "<note>"
   it 'updates an issue with a note', (done) ->
@@ -126,11 +126,11 @@ describe 'hubot-redmine', ->
       .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
 
     selfRoom = @room
-    selfRoom.user.say('alice', '@hubot update 100 with "This looks good."')
+    selfRoom.user.say('alice', '@hubot redmine update 100 with "This looks good."')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', '@hubot update 100 with "This looks good."']
+          ['alice', '@hubot redmine update 100 with "This looks good."']
           ['hubot', "@alice Done! Updated #100 with \"This looks good.\""]
         ]
         done()
@@ -146,11 +146,11 @@ describe 'hubot-redmine', ->
       .replyWithFile(200, __dirname + '/fixtures/time_entry-1.json')
 
     selfRoom = @room
-    selfRoom.user.say('alice', '@hubot add 4 hours to 1 "This is taking a while."')
+    selfRoom.user.say('alice', '@hubot redmine add 4 hours to 1 "This is taking a while."')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', '@hubot add 4 hours to 1 \"This is taking a while.\"']
+          ['alice', '@hubot redmine add 4 hours to 1 \"This is taking a while.\"']
           ['hubot', "@alice Your time was logged"]
         ]
         done()
@@ -166,11 +166,11 @@ describe 'hubot-redmine', ->
       .replyWithFile(200, __dirname + '/fixtures/issues-new.json')
 
     selfRoom = @room
-    selfRoom.user.say('alice', '@hubot add issue to "super-important-project" with "Broken image on home page"')
+    selfRoom.user.say('alice', '@hubot redmine add issue to "super-important-project" with "Broken image on home page"')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', '@hubot add issue to "super-important-project" with "Broken image on home page"']
+          ['alice', '@hubot redmine add issue to "super-important-project" with "Broken image on home page"']
           ['hubot', "@alice Done! Added issue 100 with \"\"Broken image on home page\"\""]
         ]
         done()
@@ -182,11 +182,11 @@ describe 'hubot-redmine', ->
   # hubot link me <issue-id>
   it 'returns a link to an issue', (done) ->
     selfRoom = @room
-    selfRoom.user.say('alice', '@hubot link me 100')
+    selfRoom.user.say('alice', '@hubot redmine link me 100')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', '@hubot link me 100']
+          ['alice', '@hubot redmine link me 100']
           ['hubot', "@alice https://redmine.example.org/issues/100"]
         ]
         done()
@@ -202,11 +202,11 @@ describe 'hubot-redmine', ->
       .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
 
     selfRoom = @room
-    selfRoom.user.say('alice', '@hubot set 100 to 95% "Almost done!"')
+    selfRoom.user.say('alice', '@hubot redmine set 100 to 95% "Almost done!"')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', "@hubot set 100 to 95% \"Almost done!\""]
+          ['alice', "@hubot redmine set 100 to 95% \"Almost done!\""]
           ['hubot', "@alice Set #100 to 95%"]
         ]
         done()
@@ -254,18 +254,54 @@ describe 'hubot-redmine', ->
       return
     , 1000)
 
-  # chime in on an issue
-  it 'hears an issue', (done) ->
+  it 'ignores issue mention', (done) ->
     nock('https://redmine.example.org')
       .get('/issues/100.json')
       .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
 
     selfRoom = @room
-    selfRoom.user.say('alice', 'What about #100?')
+    selfRoom.user.say('alice', 'What about RM100?')
     setTimeout(() ->
       try
         expect(selfRoom.messages).to.eql [
-          ['alice', 'What about #100?']
+          ['alice', 'What about RM100?']
+        ]
+        done()
+      catch err
+        done err
+      return
+    , 1000)
+
+describe 'custom issue listener', ->
+  beforeEach ->
+    process.env.HUBOT_LOG_LEVEL='error'
+    process.env.HUBOT_REDMINE_BASE_URL='https://redmine.example.org'
+    process.env.HUBOT_REDMINE_TOKEN='foobarbaz123'
+    process.env.HUBOT_REDMINE_MENTION_REGEX = 'RM(\\d+)'
+    Date.now = mockDateNow
+    nock.disableNetConnect()
+    @room = helper.createRoom()
+
+  afterEach ->
+    delete process.env.HUBOT_LOG_LEVEL
+    delete process.env.HUBOT_REDMINE_BASE_URL
+    delete process.env.HUBOT_REDMINE_TOKEN
+    delete process.env.HUBOT_REDMINE_MENTION_REGEX
+    Date.now = originalDateNow
+    nock.cleanAll()
+    @room.destroy()
+
+  it 'responds when issue mentioned', (done) ->
+    nock('https://redmine.example.org')
+      .get('/issues/100.json')
+      .replyWithFile(200, __dirname + '/fixtures/issues-100.json')
+
+    selfRoom = @room
+    selfRoom.user.say('alice', 'What about RM100?')
+    setTimeout(() ->
+      try
+        expect(selfRoom.messages).to.eql [
+          ['alice', 'What about RM100?']
           ['hubot', 'Defect #100 (Redmine): New Project - subproject list should not show archived projects (Closed) [Normal]']
           ['hubot', "https://redmine.example.org/issues/100"]
         ]
