@@ -275,7 +275,7 @@ describe 'hubot-redmine', ->
       return
     , 1000)
 
-describe 'hubot-redmine missing configuration', ->
+describe 'missing configuration', ->
   beforeEach ->
     process.env.HUBOT_LOG_LEVEL='error'
     Date.now = mockDateNow
