@@ -1,12 +1,9 @@
 # Hubot Redmine
 
-Light mapping of the Redmine REST API that allows hubot access to some basic redmine tasks. Once you have a redmine
-user (preferably one with enough access to modify tickets), add the following to your heroku/etc. config:
+Light mapping of the Redmine REST API that allows Hubot access to some basic Redmine tasks. Once you have a Redmine user (preferably one with enough access to modify tickets), add the following to your Heroku/etc. config:
 
     heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
     heroku config:add HUBOT_REDMINE_TOKEN="your api token here"
-
-![screenshot](https://github.com/robhurring/hubot-redmine/blob/master/ss.png?raw=true)
 
 ## Installation
 
@@ -22,43 +19,52 @@ Then add **hubot-redmine** to your `external-scripts.json`:
 ]
 ```
 
+## Configuration
+
+| Environment Variable                 | Required? | Description                               |
+| ------------------------------------ | :-------: | ----------------------------------------- |
+| `HUBOT_REDMINE_BASE_URL`             | Yes       | URL to your Redmine install               |
+| `HUBOT_REDMINE_TOKEN`                | Yes       | API key for your selected user            |
+| `HUBOT_REDMINE_MENTION_REGEX`        | No        | Listen for this pattern and link to Redmine tickets when heard (default `/RM#(\d+)/`) |
+| `HUBOT_REDMINE_MENTION_MATCH`        | No        | Index of matched capture from HUBOT_REDMINE_MENTION_REGEX (default  `1`) |
+| `HUBOT_REDMINE_MENTION_IGNORE_USERS` | No        | Comma-separated list of users to ignore   |
+| `HUBOT_REDMINE_SEARCH_LIMIT`         | No        | Maximum search results to show for "redmine search", default is `10` |
+
 ## Showing issue details
 
-* Hubot show me [issue id]
-* Hubot redmine me [issue id]
+* @Hubot redmine show me [issue id]
+* @Hubot redmine me [issue id]
 
 ## Showing my issue (or another user's)
 
-* Hubot show my issues
-* Hubot show [user]'s issues
+* @Hubot redmine show my issues
+* @Hubot redmine show [user]'s issues
 ** [user] will attempt to match on redmine firstname or login
 
 ## Re-Assigning tickets
 
-* Hubot assign [issue id] to [user]
+* @Hubot redmine assign [issue id] to [user]
 
 ## Leaving notes on tickets
 
-* Hubot update [issue id] with "[comments]"
+* @Hubot redmine update [issue id] with "[comments]"
 
 ## Create tickets
 
-* Hubot add issue to "[project]" [traker id] with "[subject]"
+* @Hubot redmine add issue to "[project]" [traker id] with "[subject]"
 ** [tracker id] is optional and represent the number matching literal value Bug/Feature/...
 
 ## Get a link to an issue
 
-* Hubot link me [issue id]
+* @Hubot redmine link me [issue id]
 
 ## Set the percent done of an issue
 
-* Hubot set [issue id] to 100% "[comments]"
-* Hubot add [hours] hours to [issue id] "[comments]"
+* @Hubot redmine set [issue id] to 100% "[comments]"
+* @Hubot redmine add [hours] hours to [issue id] "[comments]"
 
 ## Search Redmine
 
 The default results limit is 10, configurable via `HUBOT_REDMINE_SEARCH_LIMIT`.
 
-* Hubot redmine search <query>
-
-## More coming!
+* @Hubot redmine search <query>
