@@ -1,5 +1,7 @@
 # Hubot Redmine
 
+[![npm version](https://badge.fury.io/js/hubot-redmine.svg)](https://badge.fury.io/js/hubot-redmine) [![Node CI](https://github.com/robhurring/hubot-redmine/actions/workflows/nodejs.yml/badge.svg)](https://github.com/robhurring/hubot-redmine/actions/workflows/nodejs.yml)
+
 Light mapping of the Redmine REST API that allows Hubot access to some basic Redmine tasks. Once you have a Redmine user (preferably one with enough access to modify tickets), add the following to your Heroku/etc. config:
 
     heroku config:add HUBOT_REDMINE_BASE_URL="http://redmine.your-server.com"
