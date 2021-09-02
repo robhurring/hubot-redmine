@@ -1,6 +1,6 @@
 {
   "name": "hubot-redmine",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "rob hurring",
   "description": "Interact with a Redmine instance.",
   "repository": {
