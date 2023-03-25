@@ -28,8 +28,8 @@
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
     "nock": "^13.3.0",
-    "release-it": "^15.6.0",
-    "sinon": "^15.0.1",
+    "release-it": "^15.9.3",
+    "sinon": "^15.0.2",
     "sinon-chai": "^3.7.0"
   },
   "directories": {
