@@ -18,7 +18,7 @@
 #
 
 QUERY = require('querystring')
-Redmine = require('node-redmine')
+Redmine = require('axios-redmine')
 
 module.exports = (robot) ->
   # Ensure configuration variables are set
@@ -55,12 +55,13 @@ module.exports = (robot) ->
       "notes": notes
       "done_ratio": percent
 
-    redmine.update_issue id, attributes, (err, data) ->
-      if err
+    redmine.update_issue(id, attributes)
+      .then (response) ->
+        robot.logger.debug response
+        msg.reply "Set ##{id} to #{percent}%"
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      msg.reply "Set ##{id} to #{percent}%"
+        msg.reply err
 
   # Robot add <hours> hours to <issue_id> ["comments for the time tracking"]
   robot.respond /(?:redmine|rm) add (\d{1,2}) hours? to (?:issue )?(?:#)?([+-]?([0-9]*[.])?[0-9]+)(?: "?([^"]+)"?)?/i, (msg) ->
@@ -76,12 +77,13 @@ module.exports = (robot) ->
       "hours": hours
       "comments": comments
 
-    redmine.create_time_entry attributes, (err, data) ->
-      if err
+    redmine.create_time_entry(attributes)
+      .then (response) ->
+        robot.logger.debug response
+        msg.reply "Your time was logged"
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      msg.reply "Your time was logged"
+        msg.reply err
 
   # Robot show <my|user's> [redmine] issues
   robot.respond /(?:redmine|rm) show @?(?:my|(\w+\s?'?s?)) (?:redmine )?issues/i, (msg) ->
@@ -93,40 +95,42 @@ module.exports = (robot) ->
       else
         msg.message.user.name.split(/\s/)[0]
 
-    redmine.users name:firstName, (err, data) ->
-      if err
+    redmine.users name:firstName
+      .then (response) ->
+        unless response.data.total_count > 0
+          throw new Error("Couldn't find any users with the name \"#{firstName}\"")
+        return response.data.users
+      .then (users) ->
+        return resolveUsers(firstName, users)[0]
+      .then (user) ->
+        params =
+          assigned_to_id: user.id
+          limit: 10,
+          status_id: "open"
+          sort: "priority:desc",
+
+        redmine.issues(params)
+          .then (response) ->
+            _ = []
+
+            if userMode
+              _.push "You have #{response.data.total_count} issue(s)."
+            else
+              _.push "#{user.firstname} has #{response.data.total_count} issue(s) and limiting to 10 issues here. :) "
+
+            for issue in response.data.issues
+              do (issue) ->
+                _.push "\n[#{issue.tracker.name} - #{issue.priority.name} - #{issue.status.name}] ##{issue.id}: #{issue.subject}"
+
+            msg.reply _.join "\n"
+          .catch (err) ->
+            robot.logger.error err
+            msg.reply "Couldn't get a list of issues for you!"
+
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      unless data.total_count > 0
-        msg.reply "Couldn't find any users with the name \"#{firstName}\""
-        return false
-
-      user = resolveUsers(firstName, data.users)[0]
-
-      params =
-        "assigned_to_id": user.id
-        "limit": 10,
-        "status_id": "open"
-        "sort": "priority:desc",
-
-      redmine.issues params, (err, data) ->
-        if err?
-          robot.logger.error err
-          return msg.reply "Couldn't get a list of issues for you!"
-
-        _ = []
-
-        if userMode
-          _.push "You have #{data.total_count} issue(s)."
-        else
-          _.push "#{user.firstname} has #{data.total_count} issue(s) and limiting to 10 issues here. :) "
-
-        for issue in data.issues
-          do (issue) ->
-            _.push "\n[#{issue.tracker.name} - #{issue.priority.name} - #{issue.status.name}] ##{issue.id}: #{issue.subject}"
-
-        msg.reply _.join "\n"
+        msg.reply err
+      
 
   # Robot update <issue> with "<note>"
   robot.respond /(?:redmine|rm) update (?:issue )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/i, (msg) ->
@@ -135,12 +139,13 @@ module.exports = (robot) ->
     attributes =
       "notes": "#{msg.message.user.name}: #{note}"
 
-    redmine.update_issue id, attributes, (err, data) ->
-      if err
+    redmine.update_issue id, attributes
+      .then (response) ->
+        robot.logger.debug response
+        msg.reply "Done! Updated ##{id} with \"#{note}\""
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      msg.reply "Done! Updated ##{id} with \"#{note}\""
+        msg.reply err
 
   # Robot starting <issue> <status>
   robot.respond /(?:redmine|rm) starting (?:issue )?(?:#)?(\d+) ?(?:([^*]+)?)?/i, (msg) ->
@@ -168,12 +173,13 @@ module.exports = (robot) ->
     attributes =
       "status_id": "#{status_id}"
 
-    redmine.update_issue id, attributes, (err, data) ->
-      if err
+    redmine.update_issue id, attributes
+      .then (response) ->
+        robot.logger.debug response
+        msg.reply "Done! Issue id ##{id} is now set to status '#{status}'"
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      msg.reply "Done! Issue id ##{id} is now set to status '#{status}'"
+        msg.reply err
 
   # Robot add issue to "<project>" [tracker <id>] with "<subject>"
   robot.respond /(?:redmine|rm) add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) ->
@@ -189,42 +195,42 @@ module.exports = (robot) ->
         "subject": "#{subject}"
         "tracker_id": "#{tracker_id}"
 
-    redmine.create_issue attributes, (err, data) ->
-      if err
+    redmine.create_issue attributes
+      .then (response) ->
+        robot.logger.debug response
+        msg.reply "Done! Added issue #{response.data.id} with \"#{subject}\""
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      msg.reply "Done! Added issue #{data.id} with \"#{subject}\""
+        msg.reply err
 
   # Robot assign <issue> to <user> ["note to add with the assignment]
   robot.respond /(?:redmine|rm) assign (?:issue )?(?:#)?(\d+) to (\w+)(?: "?([^"]+)"?)?/i, (msg) ->
     [id, userName, note] = msg.match[1..3]
+    users = []
+    redmine.users name:userName
+      .then (response) ->
+        unless response.data.total_count > 0
+          throw new Error("Couldn't find any users with the name \"#{userName}\"")
+        return response.data.users
+      .then (users) ->
+        # try to resolve the user using login/firstname -- take the first result (hacky)
+        user = resolveUsers(userName, users)[0]
 
-    redmine.users name:userName, (err, data) ->
-      if err
+        attributes =
+          "assigned_to_id": user.id
+
+        # allow an optional note with the re-assign
+        attributes["notes"] = "#{msg.message.user.name}: #{note}" if note?
+
+        # get our issue
+        redmine.update_issue id, attributes
+          .then (response) ->
+            robot.logger.debug response
+            msg.reply "Assigned ##{id} to #{user.firstname}."
+
+      .catch (err) ->
         robot.logger.error err
-        return msg.reply err
-
-      unless data.total_count > 0
-        msg.reply "Couldn't find any users with the name \"#{userName}\""
-        return false
-
-      # try to resolve the user using login/firstname -- take the first result (hacky)
-      user = resolveUsers(userName, data.users)[0]
-
-      attributes =
-        "assigned_to_id": user.id
-
-      # allow an optional note with the re-assign
-      attributes["notes"] = "#{msg.message.user.name}: #{note}" if note?
-
-      # get our issue
-      redmine.update_issue id, attributes, (err, data) ->
-        if err
-          robot.logger.error err
-          return msg.reply err
-
-        msg.reply "Assigned ##{id} to #{user.firstname}."
+        msg.reply err
 
   # Robot redmine me <issue>
   robot.respond /(?:redmine|rm)(?: show)?(?: me)? (?:issue )?(?:#)?(\d+)/i, (msg) ->
@@ -233,28 +239,29 @@ module.exports = (robot) ->
     params =
       include: "journals"
 
-    redmine.get_issue_by_id id, params, (err, data) ->
-      issue = data.issue
-      robot.logger.debug issue
-      _ = []
-      _.push "\n[#{issue.project.name} - #{issue.priority.name}] #{issue.tracker.name} ##{issue.id} (#{issue.status.name})"
-      _.push "Assigned: #{issue.assigned_to?.name ? 'Nobody'} (opened by #{issue.author.name})"
-      if issue.status.name.toLowerCase() != 'new'
-         _.push "Progress: #{issue.done_ratio}% (#{issue.spent_hours} hours)"
-      _.push "Subject: #{issue.subject}"
-      _.push "\n#{issue.description}"
+    redmine.get_issue_by_id id, params
+      .then (response) ->
+        robot.logger.debug response  
+        issue = response.data.issue
+        _ = []
+        _.push "\n[#{issue.project.name} - #{issue.priority.name}] #{issue.tracker.name} ##{issue.id} (#{issue.status.name})"
+        _.push "Assigned: #{issue.assigned_to?.name ? 'Nobody'} (opened by #{issue.author.name})"
+        if issue.status.name.toLowerCase() != 'new'
+          _.push "Progress: #{issue.done_ratio}% (#{issue.spent_hours} hours)"
+        _.push "Subject: #{issue.subject}"
+        _.push "\n#{issue.description}"
 
-      # journals
-      if issue.journals?
-        _.push "\n" + Array(10).join('-') + '8<' + Array(50).join('-') + "\n"
-        for journal in issue.journals
-          do (journal) ->
-            if journal.notes? and journal.notes != ""
-              date = formatDate journal.created_on, 'mm/dd/yyyy (hh:ii ap)'
-              _.push "#{journal.user.name} on #{date}:"
-              _.push "    #{journal.notes}\n"
+        # journals
+        if issue.journals?
+          _.push "\n" + Array(10).join('-') + '8<' + Array(50).join('-') + "\n"
+          for journal in issue.journals
+            do (journal) ->
+              if journal.notes? and journal.notes != ""
+                date = formatDate journal.created_on, 'mm/dd/yyyy (hh:ii ap)'
+                _.push "#{journal.user.name} on #{date}:"
+                _.push "    #{journal.notes}\n"
 
-      msg.reply _.join "\n"
+        msg.reply _.join "\n"
 
   # Robot redmine search <query>
   robot.respond /(?:redmine|rm) search (.*)/i, (msg) ->
@@ -298,16 +305,17 @@ module.exports = (robot) ->
 
       params = {}
 
-      redmine.get_issue_by_id id, params, (err, data) ->
-        if err
+      redmine.get_issue_by_id id, params
+        .then (response) ->
+          robot.logger.debug response
+          issue = response.data.issue
+          url = "#{process.env.HUBOT_REDMINE_BASE_URL}/issues/#{id}"
+          # Could be a template string for configurability?
+          msg.send "#{issue.tracker.name} ##{issue.id} (#{issue.project.name}): #{issue.subject} (#{issue.status.name}) [#{issue.priority.name}]"
+          msg.send "#{url}"
+        .catch (err) ->
           robot.logger.error err
           return msg.reply err
-
-        issue = data.issue
-        url = "#{process.env.HUBOT_REDMINE_BASE_URL}/issues/#{id}"
-        # Could be a template string for configurability?
-        msg.send "#{issue.tracker.name} ##{issue.id} (#{issue.project.name}): #{issue.subject} (#{issue.status.name}) [#{issue.priority.name}]"
-        msg.send "#{url}"
 
   # simple ghetto fab date formatter this should definitely be replaced, but didn't want to
   # introduce dependencies this early
