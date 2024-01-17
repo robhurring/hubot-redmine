@@ -3,4 +3,4 @@
 # bootstrap environment
 source script/bootstrap
 
-mocha --require coffee-script/register "test/**/*.coffee" --reporter spec --exit
+mocha "test/**/*.js" --reporter spec --exit
