@@ -22,19 +22,24 @@
     "hubot": ">=3 || 0.0.0-development"
   },
   "devDependencies": {
-    "chai": "^4.3.7",
-    "coffee-script": "^1.12.7",
+    "hubot": "^4",
+    "chai": "^4.3.10",
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.5.0",
+    "eslint-plugin-promise": "^6.1.1",
     "hubot-test-helper": "^1.9.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "nock": "^13.3.2",
-    "sinon": "^15.2.0",
+    "nock": "^13.4.0",
+    "sinon": "^17.0.1",
     "sinon-chai": "^3.7.0"
   },
   "directories": {
     "lib": "./src"
   },
-  "main": "index.coffee",
+  "main": "index.js",
   "scripts": {
     "test": "script/test",
     "prepare": "husky install"
