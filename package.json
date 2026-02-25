@@ -16,7 +16,7 @@
     "redmine"
   ],
   "dependencies": {
-    "axios-redmine": "^0.1.36"
+    "axios-redmine": "^1.0.0"
   },
   "peerDependencies": {
     "hubot": ">=3 || 0.0.0-development"
