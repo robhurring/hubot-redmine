@@ -17,7 +17,149 @@
 //   hubot redmine redmine search <query> - Search for a particular issue, wiki page, etc.
 //
 
-const Redmine = require('axios-redmine');
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
+
+const requestJson = ({
+  baseUrl,
+  apiKey,
+  method,
+  path,
+  query,
+  body,
+}) => new Promise((resolve, reject) => {
+  const requestUrl = new URL(path, baseUrl);
+  if (query != null) {
+    Object.entries(query)
+      .filter(([, value]) => value != null)
+      .forEach(([key, value]) => {
+        requestUrl.searchParams.append(key, String(value));
+      });
+  }
+
+  const payload = body != null ? JSON.stringify(body) : undefined;
+  const client = requestUrl.protocol === 'https:' ? https : http;
+  const req = client.request(requestUrl, {
+    method,
+    headers: {
+      'x-redmine-api-key': apiKey,
+      Accept: 'application/json',
+      ...(payload != null ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
+    },
+  }, (res) => {
+    const chunks = [];
+    res.on('data', (chunk) => chunks.push(chunk));
+    res.on('end', () => {
+      const responseBody = Buffer.concat(chunks).toString('utf8');
+
+      let parsed = {};
+      if (responseBody.length > 0) {
+        try {
+          parsed = JSON.parse(responseBody);
+        } catch (error) {
+          reject(error);
+          return;
+        }
+      }
+
+      if ((res.statusCode != null) && (res.statusCode >= 200) && (res.statusCode < 300)) {
+        resolve({ data: parsed });
+        return;
+      }
+
+      const error = new Error(`Request failed with status ${res.statusCode}`);
+      error.response = {
+        status: res.statusCode,
+        data: parsed,
+      };
+      reject(error);
+    });
+  });
+
+  req.on('error', (error) => reject(error));
+  if (payload != null) {
+    req.write(payload);
+  }
+  req.end();
+});
+
+class RedmineClient {
+  constructor(baseUrl, apiKey) {
+    this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
+  }
+
+  users(params) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'GET',
+      path: '/users.json',
+      query: params,
+    });
+  }
+
+  issues(params) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'GET',
+      path: '/issues.json',
+      query: params,
+    });
+  }
+
+  get_issue_by_id(id, params) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'GET',
+      path: `/issues/${id}.json`,
+      query: params,
+    });
+  }
+
+  update_issue(id, attributes) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'PUT',
+      path: `/issues/${id}.json`,
+      body: { issue: attributes },
+    });
+  }
+
+  create_issue(attributes) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'POST',
+      path: '/issues.json',
+      body: { issue: attributes },
+    });
+  }
+
+  create_time_entry(attributes) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'POST',
+      path: '/time_entries.json',
+      body: { time_entry: attributes },
+    });
+  }
+
+  search(params) {
+    return requestJson({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      method: 'GET',
+      path: '/search.json',
+      query: params,
+    });
+  }
+}
 
 module.exports = (robot) => {
   // Ensure configuration variables are set
@@ -33,9 +175,9 @@ module.exports = (robot) => {
 
   // Initialize Redmine connection
   try {
-    redmine = new Redmine(
+    redmine = new RedmineClient(
       process.env.HUBOT_REDMINE_BASE_URL,
-      { apiKey: process.env.HUBOT_REDMINE_TOKEN },
+      process.env.HUBOT_REDMINE_TOKEN,
     );
   } catch (error) {
     const err = error;
@@ -382,25 +524,9 @@ module.exports = (robot) => {
       limit: process.env.HUBOT_REDMINE_SEARCH_LIMIT || 10,
     };
 
-    // Search endpoint Not available in node-redmine@0.2.1
-    robot.http(`${process.env.HUBOT_REDMINE_BASE_URL}/search.json`)
-      .header('x-redmine-api-key', process.env.HUBOT_REDMINE_TOKEN)
-      .query(params)
-      .get()((err, _res, body) => {
-        let data;
-        if (err != null) {
-          robot.logger.error(err);
-          msg.reply(err);
-          return;
-        }
-
-        try {
-          data = JSON.parse(body);
-        } catch (error1) {
-          robot.logger.error(error1);
-          msg.reply(error1);
-          return;
-        }
+    redmine.search(params)
+      .then((response) => {
+        const data = response.data;
 
         if (data.total_count > 0) {
           const searchResults = [];
@@ -414,6 +540,10 @@ module.exports = (robot) => {
           return;
         }
         msg.reply(`No search results for ${params.q}`);
+      })
+      .catch((err) => {
+        robot.logger.error(err);
+        msg.reply(err);
       });
   });
 
