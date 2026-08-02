@@ -161,6 +161,28 @@ class RedmineClient {
   }
 }
 
+const formatRedmineError = (error, fallbackMessage) => {
+  const status = error?.response?.status;
+
+  if (status === 401) {
+    return 'Redmine request failed: unauthorized (401). Check HUBOT_REDMINE_TOKEN.';
+  }
+
+  if (status === 404) {
+    return 'Redmine request failed: resource not found (404).';
+  }
+
+  if (status != null) {
+    return `Redmine request failed with status ${status}.`;
+  }
+
+  if (error instanceof Error && error.message) {
+    return fallbackMessage == null ? error.message : `${fallbackMessage} (${error.message})`;
+  }
+
+  return fallbackMessage == null ? 'Redmine request failed.' : fallbackMessage;
+};
+
 module.exports = (robot) => {
   // Ensure configuration variables are set
   let redmine;
@@ -283,7 +305,7 @@ module.exports = (robot) => {
         msg.reply(`Set #${id} to ${donePercent}%`);
       }).catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't update issue #${id}.`));
       });
   });
 
@@ -310,7 +332,7 @@ module.exports = (robot) => {
         msg.reply('Your time was logged');
       }).catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't log time for issue #${id}.`));
       });
   });
 
@@ -355,12 +377,12 @@ module.exports = (robot) => {
             msg.reply(output.join('\n'));
           }).catch((err) => {
             robot.logger.error(err);
-            msg.reply("Couldn't get a list of issues for you!");
+            msg.reply(formatRedmineError(err, `Couldn't get a list of issues for ${firstName}.`));
           });
       })
       .catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't get a list of issues for ${firstName}.`));
       });
   });
 
@@ -376,7 +398,7 @@ module.exports = (robot) => {
         return msg.reply(`Done! Updated #${id} with "${note}"`);
       }).catch((err) => {
         robot.logger.error(err);
-        return msg.reply(err);
+        return msg.reply(formatRedmineError(err, `Couldn't update issue #${id}.`));
       });
   });
 
@@ -413,7 +435,7 @@ module.exports = (robot) => {
         msg.reply(`Done! Issue id #${id} is now set to status '${status || 'In Progress'}'`);
       }).catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't update issue #${id}.`));
       });
   });
 
@@ -440,7 +462,7 @@ module.exports = (robot) => {
         msg.reply(`Done! Added issue ${response.data.id} with "${subject}"`);
       }).catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't create issue for project ${projectId}.`));
       });
   });
 
@@ -463,14 +485,14 @@ module.exports = (robot) => {
         if (note != null) { attributes.notes = `${msg.message.user.name}: ${note}`; }
 
         // get our issue
-        redmine.update_issue(id, attributes)
+        return redmine.update_issue(id, attributes)
           .then((response) => {
             robot.logger.debug(response);
             msg.reply(`Assigned #${id} to ${user.firstname}.`);
           });
       }).catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't assign issue #${id}.`));
       });
   });
 
@@ -514,6 +536,10 @@ module.exports = (robot) => {
         }
 
         return msg.reply(journals.join('\n'));
+      })
+      .catch((err) => {
+        robot.logger.error(err);
+        msg.reply(formatRedmineError(err, `Couldn't find issue #${id}.`));
       });
   });
 
@@ -543,7 +569,7 @@ module.exports = (robot) => {
       })
       .catch((err) => {
         robot.logger.error(err);
-        msg.reply(err);
+        msg.reply(formatRedmineError(err, `Couldn't run search for ${params.q}.`));
       });
   });
 
@@ -572,7 +598,7 @@ module.exports = (robot) => {
           msg.send(`${url}`);
         }).catch((err) => {
           robot.logger.error(err);
-          msg.reply(err);
+          msg.reply(formatRedmineError(err, `Couldn't find issue #${id}.`));
         });
     });
   }
