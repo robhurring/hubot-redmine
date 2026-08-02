@@ -133,6 +133,22 @@ describe('hubot-redmine', () => {
     });
   });
 
+  it('handles missing issues without crashing', async function () {
+    nock('https://redmine.example.org')
+      .get('/issues/404.json?include=journals')
+      .reply(404, { error: 'Not Found' });
+
+    const selfRoom = this.room;
+    selfRoom.user.say('alice', '@hubot redmine me 404');
+
+    await eventually(() => {
+      assert.deepEqual(selfRoom.messages, [
+        ['alice', '@hubot redmine me 404'],
+        ['hubot', "@alice Redmine request failed: resource not found (404)."],
+      ]);
+    });
+  });
+
   it('sets an issue to in progress', async function () {
     nock('https://redmine.example.org')
       .intercept('/issues/100.json', 'PUT')
@@ -181,6 +197,62 @@ describe('hubot-redmine', () => {
     });
   });
 
+  it('handles unauthorized search requests without crashing', async function () {
+    nock('https://redmine.example.org')
+      .get('/search.json?q=bug&limit=10')
+      .reply(401, { error: 'Unauthorized' });
+
+    const selfRoom = this.room;
+    selfRoom.user.say('alice', '@hubot redmine search bug');
+
+    await eventually(() => {
+      assert.deepEqual(selfRoom.messages, [
+        ['alice', '@hubot redmine search bug'],
+        ['hubot', '@alice Redmine request failed: unauthorized (401). Check HUBOT_REDMINE_TOKEN.'],
+      ]);
+    });
+  });
+
+  it('handles assignment update errors without crashing', async function () {
+    nock('https://redmine.example.org')
+      .get('/users.json?name=alice')
+      .replyWithFile(200, `${__dirname}/fixtures/users-search.json`);
+
+    nock('https://redmine.example.org')
+      .intercept('/issues/100.json', 'PUT')
+      .reply(404, { error: 'Not Found' });
+
+    const selfRoom = this.room;
+    selfRoom.user.say('alice', '@hubot redmine assign 100 to alice');
+
+    await eventually(() => {
+      assert.deepEqual(selfRoom.messages, [
+        ['alice', '@hubot redmine assign 100 to alice'],
+        ['hubot', '@alice Redmine request failed: resource not found (404).'],
+      ]);
+    });
+  });
+
+  it('handles unauthorized issue-list requests without crashing', async function () {
+    nock('https://redmine.example.org')
+      .get('/users.json?name=alice')
+      .replyWithFile(200, `${__dirname}/fixtures/users-search.json`);
+
+    nock('https://redmine.example.org')
+      .get('/issues.json?assigned_to_id=4&limit=10&status_id=open&sort=priority%3Adesc')
+      .reply(401, { error: 'Unauthorized' });
+
+    const selfRoom = this.room;
+    selfRoom.user.say('alice', '@hubot redmine show my issues');
+
+    await eventually(() => {
+      assert.deepEqual(selfRoom.messages, [
+        ['alice', '@hubot redmine show my issues'],
+        ['hubot', '@alice Redmine request failed: unauthorized (401). Check HUBOT_REDMINE_TOKEN.'],
+      ]);
+    });
+  });
+
   it('ignores issue mention by default', async function () {
     const selfRoom = this.room;
     selfRoom.user.say('alice', 'What about RM100?');
@@ -225,6 +297,22 @@ describe('custom issue listener', () => {
         ['alice', 'What about RM100?'],
         ['hubot', 'Defect #100 (Redmine): New Project - subproject list should not show archived projects (Closed) [Normal]'],
         ['hubot', 'https://redmine.example.org/issues/100'],
+      ]);
+    });
+  });
+
+  it('handles missing mentioned issues without crashing', async function () {
+    nock('https://redmine.example.org')
+      .get('/issues/404.json')
+      .reply(404, { error: 'Not Found' });
+
+    const selfRoom = this.room;
+    selfRoom.user.say('alice', 'What about RM404?');
+
+    await eventually(() => {
+      assert.deepEqual(selfRoom.messages, [
+        ['alice', 'What about RM404?'],
+        ['hubot', '@alice Redmine request failed: resource not found (404).'],
       ]);
     });
   });
