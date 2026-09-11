@@ -207,6 +207,18 @@ module.exports = (robot) => {
     return;
   }
 
+  // Restrict privileged Redmine operations (updating/creating/assigning issues) to
+  // usernames listed in HUBOT_REDMINE_ADMINS (comma separated), since the API token
+  // is shared and grants full permissions regardless of the chat user.
+  const isAuthorized = (msg) => {
+    const admins = (process.env.HUBOT_REDMINE_ADMINS || '')
+      .split(',').map((u) => u.trim().toLowerCase()).filter(Boolean);
+    const username = (msg.message.user.name || '').toLowerCase();
+    if (admins.includes(username)) { return true; }
+    msg.reply('Sorry, you are not authorized to perform this Redmine action.');
+    return false;
+  };
+
   // simple ghetto fab date formatter this should definitely be replaced, but didn't want to
   // introduce dependencies this early
   //
@@ -285,6 +297,7 @@ module.exports = (robot) => {
   // Robot set <issue> to <percent>% ["comments"]
   robot.respond(/(?:redmine|rm) set (?:issue )?(?:#)?(\d+) to (\d{1,3})%?(?: "?([^"]+)"?)?/i, (msg) => {
     let notes;
+    if (!isAuthorized(msg)) { return; }
     const [id, percent, userComments] = msg.match.slice(1, 4);
     const donePercent = parseInt(percent, 10);
 
@@ -312,6 +325,7 @@ module.exports = (robot) => {
   // Robot add <hours> hours to <issue_id> ["comments for the time tracking"]
   robot.respond(/(?:redmine|rm) add (\d{1,2}) hours? to (?:issue )?(?:#)?([+-]?([0-9]*[.])?[0-9]+)(?: "?([^"]+)"?)?/i, (msg) => {
     let comments;
+    if (!isAuthorized(msg)) { return; }
     const [hours, id, userComments] = msg.match.slice(1, 4);
 
     if (userComments != null) {
@@ -388,6 +402,7 @@ module.exports = (robot) => {
 
   // Robot update <issue> with "<note>"
   robot.respond(/(?:redmine|rm) update (?:issue )?(?:#)?(\d+)(?:\s*with\s*)?(?:[-:,])? (?:"?([^"]+)"?)/i, (msg) => {
+    if (!isAuthorized(msg)) { return; }
     const [id, note] = msg.match.slice(1, 3);
 
     const attributes = { notes: `${msg.message.user.name}: ${note}` };
@@ -405,6 +420,7 @@ module.exports = (robot) => {
   // Robot starting <issue> <status>
   robot.respond(/(?:redmine|rm) starting (?:issue )?(?:#)?(\d+) ?(?:([^*]+)?)?/i, (msg) => {
     let statusId;
+    if (!isAuthorized(msg)) { return; }
     const [id, status] = msg.match.slice(1, 3);
 
     if (status != null) {
@@ -441,6 +457,7 @@ module.exports = (robot) => {
 
   // Robot add issue to "<project>" [tracker <id>] with "<subject>"
   robot.respond(/(?:redmine|rm) add (?:issue )?(?:\s*to\s*)?(?:"?([^" ]+)"? )(?:tracker\s)?(\d+)?(?:\s*with\s*)("?([^"]+)"?)/i, (msg) => {
+    if (!isAuthorized(msg)) { return; }
     const [projectId, trackerId, subject] = msg.match.slice(1, 4);
 
     let attributes = {
@@ -468,6 +485,7 @@ module.exports = (robot) => {
 
   // Robot assign <issue> to <user> ["note to add with the assignment]
   robot.respond(/(?:redmine|rm) assign (?:issue )?(?:#)?(\d+) to (\w+)(?: "?([^"]+)"?)?/i, (msg) => {
+    if (!isAuthorized(msg)) { return; }
     const [id, userName, note] = msg.match.slice(1, 4);
     redmine.users({ name: userName })
       .then((response) => {
